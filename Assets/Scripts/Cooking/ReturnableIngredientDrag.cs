@@ -8,9 +8,10 @@ public class ReturnableIngredientDrag : MonoBehaviour, IPointerDownHandler, IDra
 
     private Camera eventCamera;
     private RectTransform dragParentRect;
-    private Vector3 originalLocalPosition;
-    private Vector3 dragCenterOffset;
+    private Vector2 originalAnchoredPosition;
+    private Vector2 dragCenterOffset;
     private bool isDragging;
+    private bool hasCachedOriginalPosition;
 
     private void Awake()
     {
@@ -28,12 +29,22 @@ public class ReturnableIngredientDrag : MonoBehaviour, IPointerDownHandler, IDra
         if (targetRect != null)
         {
             dragParentRect = targetRect.parent as RectTransform;
-            originalLocalPosition = targetRect.localPosition;
         }
+    }
+
+    private void Start()
+    {
+        Canvas.ForceUpdateCanvases();
+        CacheOriginalPosition();
     }
 
     public void OnPointerDown(PointerEventData eventData)
     {
+        if (!hasCachedOriginalPosition)
+        {
+            CacheOriginalPosition();
+        }
+
         isDragging = true;
         dragCenterOffset = GetCenterOffset();
         MoveToPointer(eventData);
@@ -76,29 +87,50 @@ public class ReturnableIngredientDrag : MonoBehaviour, IPointerDownHandler, IDra
 
         if (RectTransformUtility.ScreenPointToLocalPointInRectangle(dragParentRect, eventData.position, eventCamera, out Vector2 localPoint))
         {
-            targetRect.localPosition = new Vector3(localPoint.x, localPoint.y, originalLocalPosition.z) - dragCenterOffset;
+            targetRect.anchoredPosition = ConvertParentLocalPointToAnchoredPosition(localPoint - dragCenterOffset);
         }
     }
 
-    private Vector3 GetCenterOffset()
+    private Vector2 ConvertParentLocalPointToAnchoredPosition(Vector2 parentLocalPoint)
+    {
+        Rect parentRect = dragParentRect.rect;
+        Vector2 anchorCenter = (targetRect.anchorMin + targetRect.anchorMax) * 0.5f;
+        Vector2 anchorReferencePoint = new Vector2(
+            Mathf.Lerp(parentRect.xMin, parentRect.xMax, anchorCenter.x),
+            Mathf.Lerp(parentRect.yMin, parentRect.yMax, anchorCenter.y));
+
+        return parentLocalPoint - anchorReferencePoint;
+    }
+
+    private Vector2 GetCenterOffset()
     {
         if (targetRect == null)
         {
-            return Vector3.zero;
+            return Vector2.zero;
         }
 
         Rect rect = targetRect.rect;
-        return new Vector3(
+        return new Vector2(
             (0.5f - targetRect.pivot.x) * rect.width,
-            (0.5f - targetRect.pivot.y) * rect.height,
-            0f);
+            (0.5f - targetRect.pivot.y) * rect.height);
     }
 
     private void ReturnToOriginalPosition()
     {
         if (targetRect != null)
         {
-            targetRect.localPosition = originalLocalPosition;
+            targetRect.anchoredPosition = originalAnchoredPosition;
         }
+    }
+
+    private void CacheOriginalPosition()
+    {
+        if (targetRect == null)
+        {
+            return;
+        }
+
+        originalAnchoredPosition = targetRect.anchoredPosition;
+        hasCachedOriginalPosition = true;
     }
 }
