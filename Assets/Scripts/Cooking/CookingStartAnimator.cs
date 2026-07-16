@@ -6,7 +6,6 @@ public class CookingStartAnimator : MonoBehaviour
 {
     [SerializeField] private RectTransform targetRect;
     [SerializeField] private Button startButton;
-    [SerializeField] private CookingIngredientManager ingredientManager;
     [SerializeField] private Vector2 shownPosition = new Vector2(-20f, -15f);
     [SerializeField] private float showDuration = 0.45f;
     [SerializeField] private float hideDuration = 0.25f;
@@ -41,29 +40,20 @@ public class CookingStartAnimator : MonoBehaviour
 
     private void OnEnable()
     {
-        if (ingredientManager == null)
-        {
-            Debug.LogWarning($"{nameof(CookingStartAnimator)}: IngredientManager is not assigned.");
-            return;
-        }
-
-        ingredientManager.IngredientSelectionChanged += HandleIngredientSelectionChanged;
-        HandleIngredientSelectionChanged(ingredientManager.ClickedIngredients.Count > 0);
+        CupDragController.CupContentAvailabilityChanged += HandleCupContentAvailabilityChanged;
+        HandleCupContentAvailabilityChanged(CupDragController.HasAnyCupWithContent());
     }
 
     private void OnDisable()
     {
-        if (ingredientManager != null)
-        {
-            ingredientManager.IngredientSelectionChanged -= HandleIngredientSelectionChanged;
-        }
+        CupDragController.CupContentAvailabilityChanged -= HandleCupContentAvailabilityChanged;
 
         positionTween?.Kill();
     }
 
-    private void HandleIngredientSelectionChanged(bool hasAnyIngredient)
+    private void HandleCupContentAvailabilityChanged(bool hasAnyCupContent)
     {
-        if (hasAnyIngredient)
+        if (hasAnyCupContent)
         {
             ShowStartButton();
             return;

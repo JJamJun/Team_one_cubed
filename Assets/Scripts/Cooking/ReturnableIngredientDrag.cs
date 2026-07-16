@@ -4,12 +4,12 @@ using UnityEngine.EventSystems;
 public class ReturnableIngredientDrag : MonoBehaviour, IPointerDownHandler, IDragHandler, IPointerUpHandler
 {
     [SerializeField] private RectTransform targetRect;
-    [SerializeField] private RectTransform canvasRect;
-    [SerializeField] private CupDragController cupDragController;
     [SerializeField] private CupContentState cupStateOnDrop = CupContentState.Normal;
 
     private Camera eventCamera;
-    private Vector2 originalPosition;
+    private RectTransform dragParentRect;
+    private Vector3 originalLocalPosition;
+    private Vector3 dragCenterOffset;
     private bool isDragging;
 
     private void Awake()
@@ -22,19 +22,20 @@ public class ReturnableIngredientDrag : MonoBehaviour, IPointerDownHandler, IDra
         Canvas canvas = GetComponentInParent<Canvas>();
         if (canvas != null)
         {
-            canvasRect = canvas.transform as RectTransform;
             eventCamera = canvas.renderMode == RenderMode.ScreenSpaceOverlay ? null : canvas.worldCamera;
         }
 
         if (targetRect != null)
         {
-            originalPosition = targetRect.anchoredPosition;
+            dragParentRect = targetRect.parent as RectTransform;
+            originalLocalPosition = targetRect.localPosition;
         }
     }
 
     public void OnPointerDown(PointerEventData eventData)
     {
         isDragging = true;
+        dragCenterOffset = GetCenterOffset();
         MoveToPointer(eventData);
     }
 
@@ -57,9 +58,10 @@ public class ReturnableIngredientDrag : MonoBehaviour, IPointerDownHandler, IDra
 
         isDragging = false;
 
-        if (cupDragController != null && cupDragController.IsPointerInsideCup(eventData))
+        CupDragController targetCup = CupDragController.FindSpawnedCupAtPointer(eventData);
+        if (targetCup != null)
         {
-            cupDragController.ApplyIngredient(cupStateOnDrop);
+            targetCup.ApplyIngredient(cupStateOnDrop);
         }
 
         ReturnToOriginalPosition();
@@ -67,22 +69,36 @@ public class ReturnableIngredientDrag : MonoBehaviour, IPointerDownHandler, IDra
 
     private void MoveToPointer(PointerEventData eventData)
     {
-        if (canvasRect == null || targetRect == null)
+        if (dragParentRect == null || targetRect == null)
         {
             return;
         }
 
-        if (RectTransformUtility.ScreenPointToLocalPointInRectangle(canvasRect, eventData.position, eventCamera, out Vector2 localPoint))
+        if (RectTransformUtility.ScreenPointToLocalPointInRectangle(dragParentRect, eventData.position, eventCamera, out Vector2 localPoint))
         {
-            targetRect.anchoredPosition = localPoint;
+            targetRect.localPosition = new Vector3(localPoint.x, localPoint.y, originalLocalPosition.z) - dragCenterOffset;
         }
+    }
+
+    private Vector3 GetCenterOffset()
+    {
+        if (targetRect == null)
+        {
+            return Vector3.zero;
+        }
+
+        Rect rect = targetRect.rect;
+        return new Vector3(
+            (0.5f - targetRect.pivot.x) * rect.width,
+            (0.5f - targetRect.pivot.y) * rect.height,
+            0f);
     }
 
     private void ReturnToOriginalPosition()
     {
         if (targetRect != null)
         {
-            targetRect.anchoredPosition = originalPosition;
+            targetRect.localPosition = originalLocalPosition;
         }
     }
 }
