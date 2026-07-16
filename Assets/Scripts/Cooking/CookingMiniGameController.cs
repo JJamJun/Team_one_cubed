@@ -5,6 +5,17 @@ using DG.Tweening;
 using TMPro;
 using UnityEngine;
 using UnityEngine.InputSystem;
+using UnityEngine.UI;
+
+[Serializable]
+public class MenuArrowCommandSetting
+{
+    [SerializeField] private string menuName;
+    [SerializeField] private string commandSequence;
+
+    public string MenuName => menuName;
+    public string CommandSequence => commandSequence;
+}
 
 public class CookingRecipe
 {
@@ -22,10 +33,10 @@ public class CookingRecipe
 
 public class CookingMiniGameController : MonoBehaviour
 {
-    private const char UpArrow = '\u25B2';
-    private const char DownArrow = '\u25BC';
-    private const char LeftArrow = '\u25C0';
-    private const char RightArrow = '\u25B6';
+    private const char UpArrow = '\u2191';
+    private const char DownArrow = '\u2193';
+    private const char LeftArrow = '\u2190';
+    private const char RightArrow = '\u2192';
 
     [SerializeField] private GameObject cookingSpriteRoot;
     [SerializeField] private TMP_Text arrowCmdText;
@@ -41,6 +52,13 @@ public class CookingMiniGameController : MonoBehaviour
     [SerializeField] private float errorFadeDuration = 0.35f;
     [SerializeField] private float errorBounceStartScale = 0.75f;
     [SerializeField] private bool autoHideError = true;
+    [SerializeField] private TMP_Text debugSuccessCountText;
+    [SerializeField] private CookingMenuCommandManager menuCommandManager;
+    [SerializeField] private Image timerImage;
+    [SerializeField] private RectTransform timerRect;
+    [SerializeField] private float cookingTimeLimit = 10f;
+    [SerializeField] private Color timerStartColor = Color.green;
+    [SerializeField] private Color timerEndColor = Color.red;
 
     private readonly List<CookingRecipe> recipes = new List<CookingRecipe>();
     private bool initialized;
@@ -57,15 +75,12 @@ public class CookingMiniGameController : MonoBehaviour
     private Vector3 originalErrorScale = Vector3.one;
     private Color originalErrorColor = Color.white;
     private bool hasCapturedErrorVisuals;
-
-    private static readonly Dictionary<string, string> ArrowCommandsByMenu = new Dictionary<string, string>
-    {
-        { "\uC544\uC774\uC2A4\uD2F0", "\u25B2\u25B2\u25BC\u25BC" },
-        { "\uC544\uC774\uC2A4\uC544\uBA54\uB9AC\uCE74\uB178", "\u25B2\u25BC\u25B2\u25BC" },
-        { "\uC544\uBA54\uB9AC\uCE74\uB178", "\u25C0\u25C0\u25B6\u25B6" },
-        { "\uC544\uC0F7\uCD94", "\u25B2\u25BC\u25C0\u25B6" },
-        { "\uC5BC\uC74C\uBB3C", "\u25B2\u25C0" }
-    };
+    private CupDragController activeCookingCup;
+    private bool cookingResultApplied;
+    private int successCount;
+    private float remainingCookingTime;
+    private bool timerRunning;
+    private float originalTimerWidth;
 
     private void Awake()
     {
@@ -93,6 +108,15 @@ public class CookingMiniGameController : MonoBehaviour
             return;
         }
 
+        if (timerRunning)
+        {
+            UpdateCookingTimer();
+            if (!arrowInputEnabled)
+            {
+                return;
+            }
+        }
+
         char? pressedArrow = GetPressedArrow();
         if (!pressedArrow.HasValue)
         {
@@ -108,7 +132,9 @@ public class CookingMiniGameController : MonoBehaviour
             {
                 commandComplete = true;
                 arrowInputEnabled = false;
+                timerRunning = false;
                 escapeExitEnabled = true;
+                ApplyCookingResult(true);
                 Debug.Log($"Cooking command complete: {currentMenuName}");
             }
         }
@@ -116,31 +142,42 @@ public class CookingMiniGameController : MonoBehaviour
         {
             wrongIndex = inputIndex;
             arrowInputEnabled = false;
+            timerRunning = false;
             escapeExitEnabled = true;
+            ApplyCookingResult(false);
             Debug.Log($"Cooking command failed: {currentMenuName}");
         }
 
         RenderArrowCommand();
     }
 
-    public bool TryStartCooking(IReadOnlyList<CupContentState> cupStates, string cupName)
+    public bool TryStartCooking(CupDragController cup)
     {
         EnsureInitialized();
 
-        if (!TryFindMatchingRecipe(cupStates, out CookingRecipe recipe))
+        if (cup == null)
         {
-            ShowRecipeError(cupStates);
-            Debug.Log($"Cooking recipe mismatch: {cupName} states [{FormatStates(cupStates)}]");
+            Debug.LogWarning($"{nameof(CookingMiniGameController)}: Cooking cup is not assigned.");
             return false;
         }
 
-        StartCooking(recipe, cupName, cupStates);
+        IReadOnlyList<CupContentState> cupStates = cup.ContentStates;
+        if (!TryFindMatchingRecipe(cupStates, out CookingRecipe recipe))
+        {
+            ShowRecipeError(cupStates);
+            Debug.Log($"Cooking recipe mismatch: {cup.name} states [{FormatStates(cupStates)}]");
+            return false;
+        }
+
+        StartCooking(recipe, cup, cupStates);
         return true;
     }
 
-    private void StartCooking(CookingRecipe recipe, string cupName, IReadOnlyList<CupContentState> cupStates)
+    private void StartCooking(CookingRecipe recipe, CupDragController cup, IReadOnlyList<CupContentState> cupStates)
     {
         hasCookingAttemptStarted = true;
+        activeCookingCup = cup;
+        cookingResultApplied = false;
         currentMenuName = recipe.MenuName;
         currentCommand = recipe.ArrowCommand;
         inputIndex = 0;
@@ -148,6 +185,7 @@ public class CookingMiniGameController : MonoBehaviour
         commandComplete = string.IsNullOrEmpty(currentCommand);
         arrowInputEnabled = !commandComplete;
         escapeExitEnabled = commandComplete;
+        StartCookingTimer();
 
         HideRecipeError(true);
 
@@ -157,7 +195,7 @@ public class CookingMiniGameController : MonoBehaviour
         }
 
         RenderArrowCommand();
-        Debug.Log($"CookingSprite opened for {recipe.MenuName} with {cupName} states [{FormatStates(cupStates)}]");
+        Debug.Log($"CookingSprite opened for {recipe.MenuName} with {cup.name} states [{FormatStates(cupStates)}]");
     }
 
     private void ShowRecipeError(IReadOnlyList<CupContentState> cupStates)
@@ -186,6 +224,10 @@ public class CookingMiniGameController : MonoBehaviour
         commandComplete = false;
         arrowInputEnabled = false;
         escapeExitEnabled = false;
+        timerRunning = false;
+        activeCookingCup = null;
+        cookingResultApplied = false;
+        ResetTimerVisual();
 
         HideRecipeError(false);
 
@@ -289,7 +331,7 @@ public class CookingMiniGameController : MonoBehaviour
                 }
             }
 
-            if (!ArrowCommandsByMenu.TryGetValue(menuName, out string arrowCommand))
+            if (!TryGetArrowCommand(menuName, out string arrowCommand))
             {
                 Debug.LogWarning($"{nameof(CookingMiniGameController)}: Arrow command is not configured for menu '{menuName}'.");
                 arrowCommand = string.Empty;
@@ -299,6 +341,77 @@ public class CookingMiniGameController : MonoBehaviour
         }
 
         Debug.Log($"{nameof(CookingMiniGameController)} loaded {recipes.Count} recipes.");
+    }
+
+    private bool TryGetArrowCommand(string menuName, out string arrowCommand)
+    {
+        if (menuCommandManager == null)
+        {
+            menuCommandManager = FindMenuCommandManager();
+        }
+
+        if (menuCommandManager != null && menuCommandManager.TryGetCommandSequence(menuName, out string commandSequence))
+        {
+            arrowCommand = ConvertCommandSequence(commandSequence, menuName);
+            return !string.IsNullOrEmpty(arrowCommand);
+        }
+
+        arrowCommand = string.Empty;
+        return false;
+    }
+
+    private CookingMenuCommandManager FindMenuCommandManager()
+    {
+        CookingMenuCommandManager[] managers = Resources.FindObjectsOfTypeAll<CookingMenuCommandManager>();
+        for (int i = 0; i < managers.Length; i++)
+        {
+            if (managers[i] != null && managers[i].gameObject.scene.IsValid())
+            {
+                return managers[i];
+            }
+        }
+
+        return null;
+    }
+
+    private string ConvertCommandSequence(string commandSequence, string menuName)
+    {
+        if (string.IsNullOrWhiteSpace(commandSequence))
+        {
+            return string.Empty;
+        }
+
+        StringBuilder builder = new StringBuilder();
+        for (int i = 0; i < commandSequence.Length; i++)
+        {
+            char command = char.ToUpperInvariant(commandSequence[i]);
+            switch (command)
+            {
+                case 'U':
+                    builder.Append(UpArrow);
+                    break;
+                case 'D':
+                    builder.Append(DownArrow);
+                    break;
+                case 'L':
+                    builder.Append(LeftArrow);
+                    break;
+                case 'R':
+                    builder.Append(RightArrow);
+                    break;
+                case ' ':
+                case '\t':
+                case '-':
+                case ',':
+                case '/':
+                    break;
+                default:
+                    Debug.LogWarning($"{nameof(CookingMiniGameController)}: Invalid command '{commandSequence[i]}' in menu '{menuName}'. Use only L, R, U, D.");
+                    break;
+            }
+        }
+
+        return builder.ToString();
     }
 
     private bool TryParseIngredientState(string ingredientName, out CupContentState state)
@@ -463,6 +576,19 @@ public class CookingMiniGameController : MonoBehaviour
             }
         }
 
+        if (arrowCmdText == null)
+        {
+            TMP_Text[] allTexts = Resources.FindObjectsOfTypeAll<TMP_Text>();
+            for (int i = 0; i < allTexts.Length; i++)
+            {
+                if (allTexts[i].name == "ArrowCmd" && allTexts[i].gameObject.scene.IsValid())
+                {
+                    arrowCmdText = allTexts[i];
+                    break;
+                }
+            }
+        }
+
         if (errorText == null)
         {
             TMP_Text[] allTexts = Resources.FindObjectsOfTypeAll<TMP_Text>();
@@ -476,8 +602,193 @@ public class CookingMiniGameController : MonoBehaviour
             }
         }
 
+        if (debugSuccessCountText == null)
+        {
+            TMP_Text[] allTexts = Resources.FindObjectsOfTypeAll<TMP_Text>();
+            for (int i = 0; i < allTexts.Length; i++)
+            {
+                if (allTexts[i].name == "DEBUG_Success_cnt" && allTexts[i].gameObject.scene.IsValid())
+                {
+                    debugSuccessCountText = allTexts[i];
+                    break;
+                }
+            }
+        }
+
+        if (timerImage == null)
+        {
+            Image[] childImages = GetComponentsInChildren<Image>(true);
+            for (int i = 0; i < childImages.Length; i++)
+            {
+                if (childImages[i].name == "timer")
+                {
+                    timerImage = childImages[i];
+                    break;
+                }
+            }
+        }
+
+        if (timerImage == null)
+        {
+            Image[] allImages = Resources.FindObjectsOfTypeAll<Image>();
+            for (int i = 0; i < allImages.Length; i++)
+            {
+                if (allImages[i].name == "timer" && allImages[i].gameObject.scene.IsValid())
+                {
+                    timerImage = allImages[i];
+                    break;
+                }
+            }
+        }
+
+        if (timerRect == null && timerImage != null)
+        {
+            timerRect = timerImage.rectTransform;
+        }
+
+        if (timerRect == null)
+        {
+            RectTransform[] childRects = GetComponentsInChildren<RectTransform>(true);
+            for (int i = 0; i < childRects.Length; i++)
+            {
+                if (childRects[i].name == "timer")
+                {
+                    timerRect = childRects[i];
+                    break;
+                }
+            }
+        }
+
+        if (timerRect == null)
+        {
+            RectTransform[] allRects = Resources.FindObjectsOfTypeAll<RectTransform>();
+            for (int i = 0; i < allRects.Length; i++)
+            {
+                if (allRects[i].name == "timer" && allRects[i].gameObject.scene.IsValid())
+                {
+                    timerRect = allRects[i];
+                    break;
+                }
+            }
+        }
+
+        if (timerRect != null)
+        {
+            originalTimerWidth = timerRect.rect.width;
+            if (originalTimerWidth <= 0f)
+            {
+                originalTimerWidth = timerRect.sizeDelta.x;
+            }
+        }
+
+        InitializeSuccessCount();
         PrepareErrorText();
+        ResetTimerVisual();
         LoadRecipes();
+    }
+
+    private void ApplyCookingResult(bool succeeded)
+    {
+        if (cookingResultApplied)
+        {
+            return;
+        }
+
+        cookingResultApplied = true;
+
+        if (succeeded)
+        {
+            successCount++;
+            UpdateSuccessCountText();
+        }
+
+        if (activeCookingCup != null)
+        {
+            activeCookingCup.ShowCookingResult(succeeded);
+        }
+    }
+
+    private void InitializeSuccessCount()
+    {
+        if (debugSuccessCountText == null)
+        {
+            return;
+        }
+
+        if (!int.TryParse(debugSuccessCountText.text.Trim(), out successCount))
+        {
+            successCount = 0;
+        }
+
+        UpdateSuccessCountText();
+    }
+
+    private void UpdateSuccessCountText()
+    {
+        if (debugSuccessCountText != null)
+        {
+            debugSuccessCountText.text = successCount.ToString();
+        }
+    }
+
+    private void StartCookingTimer()
+    {
+        remainingCookingTime = Mathf.Max(0.01f, cookingTimeLimit);
+        timerRunning = arrowInputEnabled;
+        ResetTimerVisual();
+    }
+
+    private void UpdateCookingTimer()
+    {
+        remainingCookingTime -= Time.deltaTime;
+
+        float safeTimeLimit = Mathf.Max(0.01f, cookingTimeLimit);
+        float elapsedRatio = Mathf.Clamp01(1f - remainingCookingTime / safeTimeLimit);
+        SetTimerVisual(elapsedRatio);
+
+        if (remainingCookingTime > 0f)
+        {
+            return;
+        }
+
+        timerRunning = false;
+        arrowInputEnabled = false;
+        escapeExitEnabled = true;
+
+        if (!string.IsNullOrEmpty(currentCommand))
+        {
+            wrongIndex = Mathf.Clamp(inputIndex, 0, currentCommand.Length - 1);
+        }
+
+        ApplyCookingResult(false);
+        RenderArrowCommand();
+        Debug.Log($"Cooking command timed out: {currentMenuName}");
+    }
+
+    private void ResetTimerVisual()
+    {
+        remainingCookingTime = Mathf.Max(0.01f, cookingTimeLimit);
+        SetTimerVisual(0f);
+    }
+
+    private void SetTimerVisual(float elapsedRatio)
+    {
+        if (timerImage == null)
+        {
+            return;
+        }
+
+        float clampedRatio = Mathf.Clamp01(elapsedRatio);
+        timerImage.color = Color.Lerp(timerStartColor, timerEndColor, clampedRatio);
+
+        if (timerRect != null && originalTimerWidth > 0f)
+        {
+            timerRect.SetSizeWithCurrentAnchors(RectTransform.Axis.Horizontal, originalTimerWidth * (1f - clampedRatio));
+        }
+        else if (timerImage.type == Image.Type.Filled)
+        {
+            timerImage.fillAmount = 1f - clampedRatio;
+        }
     }
 
     private void PrepareErrorText()

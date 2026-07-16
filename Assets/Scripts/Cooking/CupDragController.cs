@@ -11,7 +11,8 @@ public enum CupContentState
     WaterPotEd,
     IceMachineEd,
     CoffeeMachineEd,
-    SyrupEd
+    SyrupEd,
+    Failed
 }
 
 public class CupDragController : MonoBehaviour, IPointerDownHandler, IDragHandler, IPointerUpHandler
@@ -314,6 +315,45 @@ public class CupDragController : MonoBehaviour, IPointerDownHandler, IDragHandle
         cupImage.raycastTarget = true;
     }
 
+    public void HideForCooking()
+    {
+        isDragging = false;
+
+        if (!isTemplate)
+        {
+            spawnedCups.Remove(this);
+            NotifyCupContentAvailabilityChanged();
+        }
+
+        gameObject.SetActive(false);
+    }
+
+    public void ShowCookingResult(bool succeeded)
+    {
+        isDragging = false;
+
+        if (!succeeded)
+        {
+            SetFailedState();
+        }
+
+        gameObject.SetActive(true);
+        MoveToCupSpriteSetOrigin();
+
+        if (cupImage != null)
+        {
+            cupImage.enabled = true;
+            cupImage.raycastTarget = true;
+        }
+
+        if (!isTemplate && !spawnedCups.Contains(this))
+        {
+            spawnedCups.Add(this);
+        }
+
+        NotifyCupContentAvailabilityChanged();
+    }
+
     private void HideCup()
     {
         isDragging = false;
@@ -359,6 +399,24 @@ public class CupDragController : MonoBehaviour, IPointerDownHandler, IDragHandle
         NotifyCupContentAvailabilityChanged();
     }
 
+    private void SetFailedState()
+    {
+        contentStates.Clear();
+        contentStates.Add(CupContentState.Failed);
+        LogContentStates();
+        NotifyCupContentAvailabilityChanged();
+    }
+
+    private void MoveToCupSpriteSetOrigin()
+    {
+        if (cupRect == null)
+        {
+            return;
+        }
+
+        cupRect.localPosition = Vector3.zero;
+    }
+
     private void LogContentStates()
     {
         string stateLog = contentStates.Count == 0
@@ -376,16 +434,14 @@ public class CupDragController : MonoBehaviour, IPointerDownHandler, IDragHandle
             return;
         }
 
-        if (!cookingMiniGameController.TryStartCooking(contentStates, name))
+        if (!cookingMiniGameController.TryStartCooking(this))
         {
             return;
         }
 
         if (!isTemplate)
         {
-            spawnedCups.Remove(this);
-            NotifyCupContentAvailabilityChanged();
-            gameObject.SetActive(false);
+            HideForCooking();
         }
     }
 
