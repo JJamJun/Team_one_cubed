@@ -1,0 +1,6 @@
+﻿아이스티,IceTea,WaterPot,IceMachine,
+아이스아메리카노,WaterPot,IceMachine,CoffeeMachine,
+아메리카노,WaterPot,CoffeeMachine,,
+아샷추,WaterPot,IceMachine,IceTea,CoffeeMachine
+얼음물,WaterPot,IceMachine,,
+에스프레소,CoffeeMachine,,,

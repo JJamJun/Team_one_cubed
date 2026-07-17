@@ -1,0 +1,472 @@
+using System.Collections.Generic;
+using System;
+using UnityEngine;
+using UnityEngine.EventSystems;
+using UnityEngine.UI;
+
+public enum CupContentState
+{
+    Normal,
+    IceTeaEd,
+    WaterPotEd,
+    IceMachineEd,
+    CoffeeMachineEd,
+    SyrupEd,
+    Failed
+}
+
+public class CupDragController : MonoBehaviour, IPointerDownHandler, IDragHandler, IPointerUpHandler
+{
+    private static readonly List<CupDragController> spawnedCups = new List<CupDragController>();
+
+    public static event Action<bool> CupContentAvailabilityChanged;
+
+    [SerializeField] private RectTransform cupRect;
+    [SerializeField] private Image cupImage;
+    [SerializeField] private RectTransform trashCanArea;
+    [SerializeField] private RectTransform iceMachineArea;
+    [SerializeField] private RectTransform coffeeMachineArea;
+    [SerializeField] private RectTransform syrupSnapArea;
+    [SerializeField] private RectTransform syrupPosArea;
+    [SerializeField] private RectTransform cookingStartArea;
+    [SerializeField] private GameObject cookingScreen;
+    [SerializeField] private CookingMiniGameController cookingMiniGameController;
+    [SerializeField] private RectTransform canvasRect;
+    [SerializeField] private bool hideOnStart = true;
+    [SerializeField] private bool isTemplate = true;
+
+    private Camera eventCamera;
+    private bool isDragging;
+    private readonly List<CupContentState> contentStates = new List<CupContentState>();
+
+    public static IReadOnlyList<CupDragController> SpawnedCups => spawnedCups;
+    public IReadOnlyList<CupContentState> ContentStates => contentStates;
+
+    private void Awake()
+    {
+        if (cupRect == null)
+        {
+            cupRect = GetComponent<RectTransform>();
+        }
+
+        if (cupImage == null)
+        {
+            cupImage = GetComponent<Image>();
+        }
+
+        Canvas canvas = GetComponentInParent<Canvas>();
+        if (canvas != null)
+        {
+            canvasRect = canvas.transform as RectTransform;
+            eventCamera = canvas.renderMode == RenderMode.ScreenSpaceOverlay ? null : canvas.worldCamera;
+        }
+
+        if (hideOnStart)
+        {
+            HideCup();
+        }
+
+        if (isTemplate && cookingScreen != null)
+        {
+            cookingScreen.SetActive(false);
+        }
+    }
+
+    private void OnDestroy()
+    {
+        spawnedCups.Remove(this);
+    }
+
+    public void OnPointerDown(PointerEventData eventData)
+    {
+        if (!IsCupVisible())
+        {
+            return;
+        }
+
+        BeginDrag(eventData);
+    }
+
+    public void OnDrag(PointerEventData eventData)
+    {
+        Drag(eventData);
+    }
+
+    public void OnPointerUp(PointerEventData eventData)
+    {
+        EndDrag(eventData);
+    }
+
+    public void BeginDragFromSource(PointerEventData eventData)
+    {
+        ShowCup();
+        ResetContentStates();
+        BeginDrag(eventData);
+    }
+
+    public void InitializeSpawnedCup(
+        RectTransform trashArea,
+        RectTransform iceMachineDropArea,
+        RectTransform coffeeMachineDropArea,
+        RectTransform syrupSnapDropArea,
+        RectTransform syrupSlotArea,
+        RectTransform cookingStartDropArea,
+        GameObject cookingScreenPopup,
+        CookingMiniGameController miniGameController,
+        RectTransform rootCanvasRect)
+    {
+        isTemplate = false;
+        hideOnStart = false;
+        trashCanArea = trashArea;
+        iceMachineArea = iceMachineDropArea;
+        coffeeMachineArea = coffeeMachineDropArea;
+        syrupSnapArea = syrupSnapDropArea;
+        syrupPosArea = syrupSlotArea;
+        cookingStartArea = cookingStartDropArea;
+        cookingScreen = cookingScreenPopup;
+        cookingMiniGameController = miniGameController;
+        canvasRect = rootCanvasRect;
+
+        if (cupRect == null)
+        {
+            cupRect = GetComponent<RectTransform>();
+        }
+
+        if (cupImage == null)
+        {
+            cupImage = GetComponent<Image>();
+        }
+
+        Canvas canvas = GetComponentInParent<Canvas>();
+        eventCamera = canvas != null && canvas.renderMode != RenderMode.ScreenSpaceOverlay ? canvas.worldCamera : null;
+
+        ShowCup();
+        ResetContentStates();
+
+        if (!spawnedCups.Contains(this))
+        {
+            spawnedCups.Add(this);
+        }
+
+        NotifyCupContentAvailabilityChanged();
+    }
+
+    public void DragFromSource(PointerEventData eventData)
+    {
+        Drag(eventData);
+    }
+
+    public void EndDragFromSource(PointerEventData eventData)
+    {
+        EndDrag(eventData);
+    }
+
+    private void BeginDrag(PointerEventData eventData)
+    {
+        isDragging = true;
+        MoveCupToPointer(eventData);
+    }
+
+    private void Drag(PointerEventData eventData)
+    {
+        if (!isDragging)
+        {
+            return;
+        }
+
+        MoveCupToPointer(eventData);
+    }
+
+    private void EndDrag(PointerEventData eventData)
+    {
+        if (!isDragging)
+        {
+            return;
+        }
+
+        MoveCupToPointer(eventData);
+        isDragging = false;
+
+        if (IsPointerInsideTrashCan(eventData))
+        {
+            HideCup();
+            return;
+        }
+
+        if (IsPointerInside(iceMachineArea, eventData))
+        {
+            ApplyIngredient(CupContentState.IceMachineEd);
+        }
+
+        if (IsPointerInside(coffeeMachineArea, eventData))
+        {
+            ApplyIngredient(CupContentState.CoffeeMachineEd);
+        }
+
+        if (IsPointerInside(syrupSnapArea, eventData))
+        {
+            SnapToSyrupPos();
+        }
+
+        if (contentStates.Count > 0 && IsPointerInside(cookingStartArea, eventData))
+        {
+            TryStartCooking();
+        }
+    }
+
+    public bool IsPointerInsideCup(PointerEventData eventData)
+    {
+        return IsCupVisible()
+            && cupRect != null
+            && RectTransformUtility.RectangleContainsScreenPoint(cupRect, eventData.position, eventCamera);
+    }
+
+    public static CupDragController FindSpawnedCupAtPointer(PointerEventData eventData)
+    {
+        for (int i = spawnedCups.Count - 1; i >= 0; i--)
+        {
+            CupDragController cup = spawnedCups[i];
+            if (cup == null)
+            {
+                spawnedCups.RemoveAt(i);
+                continue;
+            }
+
+            if (cup.IsPointerInsideCup(eventData))
+            {
+                return cup;
+            }
+        }
+
+        return null;
+    }
+
+    public void ApplyIngredient(CupContentState newState)
+    {
+        if (!IsCupVisible())
+        {
+            return;
+        }
+
+        ApplyContentState(newState);
+    }
+
+    public bool IsInsideArea(RectTransform area)
+    {
+        if (!IsCupVisible() || cupRect == null || area == null)
+        {
+            return false;
+        }
+
+        Vector2 screenPoint = RectTransformUtility.WorldToScreenPoint(eventCamera, cupRect.position);
+        return RectTransformUtility.RectangleContainsScreenPoint(area, screenPoint, eventCamera);
+    }
+
+    private void MoveCupToPointer(PointerEventData eventData)
+    {
+        if (canvasRect == null || cupRect == null)
+        {
+            return;
+        }
+
+        if (RectTransformUtility.ScreenPointToLocalPointInRectangle(canvasRect, eventData.position, eventCamera, out Vector2 localPoint))
+        {
+            cupRect.anchoredPosition = localPoint;
+        }
+    }
+
+    private bool IsPointerInsideTrashCan(PointerEventData eventData)
+    {
+        return IsPointerInside(trashCanArea, eventData);
+    }
+
+    private bool IsPointerInside(RectTransform area, PointerEventData eventData)
+    {
+        return area != null && RectTransformUtility.RectangleContainsScreenPoint(area, eventData.position, eventCamera);
+    }
+
+    private void SnapToSyrupPos()
+    {
+        if (canvasRect == null || cupRect == null || syrupPosArea == null)
+        {
+            return;
+        }
+
+        Vector2 screenPoint = RectTransformUtility.WorldToScreenPoint(eventCamera, syrupPosArea.position);
+        if (RectTransformUtility.ScreenPointToLocalPointInRectangle(canvasRect, screenPoint, eventCamera, out Vector2 localPoint))
+        {
+            cupRect.anchoredPosition = localPoint;
+        }
+    }
+
+    private bool IsCupVisible()
+    {
+        return cupImage != null && cupImage.enabled;
+    }
+
+    private void ShowCup()
+    {
+        if (cupImage == null)
+        {
+            return;
+        }
+
+        cupImage.enabled = true;
+        cupImage.raycastTarget = true;
+    }
+
+    public void HideForCooking()
+    {
+        isDragging = false;
+
+        if (!isTemplate)
+        {
+            spawnedCups.Remove(this);
+            NotifyCupContentAvailabilityChanged();
+        }
+
+        gameObject.SetActive(false);
+    }
+
+    public void ShowCookingResult(bool succeeded)
+    {
+        isDragging = false;
+
+        if (!succeeded)
+        {
+            SetFailedState();
+        }
+
+        gameObject.SetActive(true);
+        MoveToCupSpriteSetOrigin();
+
+        if (cupImage != null)
+        {
+            cupImage.enabled = true;
+            cupImage.raycastTarget = true;
+        }
+
+        if (!isTemplate && !spawnedCups.Contains(this))
+        {
+            spawnedCups.Add(this);
+        }
+
+        NotifyCupContentAvailabilityChanged();
+    }
+
+    private void HideCup()
+    {
+        isDragging = false;
+        ResetContentStates();
+
+        if (cupImage == null)
+        {
+            return;
+        }
+
+        cupImage.enabled = false;
+        cupImage.raycastTarget = false;
+
+        if (!isTemplate)
+        {
+            spawnedCups.Remove(this);
+            NotifyCupContentAvailabilityChanged();
+            Destroy(gameObject);
+        }
+    }
+
+    private void ApplyContentState(CupContentState newState)
+    {
+        if (newState == CupContentState.Normal)
+        {
+            ResetContentStates();
+            return;
+        }
+
+        if (!contentStates.Contains(newState))
+        {
+            contentStates.Add(newState);
+        }
+
+        LogContentStates();
+        NotifyCupContentAvailabilityChanged();
+    }
+
+    private void ResetContentStates()
+    {
+        contentStates.Clear();
+        LogContentStates();
+        NotifyCupContentAvailabilityChanged();
+    }
+
+    private void SetFailedState()
+    {
+        contentStates.Clear();
+        contentStates.Add(CupContentState.Failed);
+        LogContentStates();
+        NotifyCupContentAvailabilityChanged();
+    }
+
+    private void MoveToCupSpriteSetOrigin()
+    {
+        if (cupRect == null)
+        {
+            return;
+        }
+
+        cupRect.localPosition = Vector3.zero;
+    }
+
+    private void LogContentStates()
+    {
+        string stateLog = contentStates.Count == 0
+            ? CupContentState.Normal.ToString()
+            : string.Join(", ", contentStates);
+
+        Debug.Log($"{name} states: [{stateLog}]");
+    }
+
+    private void TryStartCooking()
+    {
+        if (cookingMiniGameController == null)
+        {
+            Debug.LogWarning($"{nameof(CupDragController)}: CookingMiniGameController is not assigned.");
+            return;
+        }
+
+        if (!cookingMiniGameController.TryStartCooking(this))
+        {
+            return;
+        }
+
+        if (!isTemplate)
+        {
+            HideForCooking();
+        }
+    }
+
+    public static bool HasAnyCupWithContent()
+    {
+        for (int i = spawnedCups.Count - 1; i >= 0; i--)
+        {
+            CupDragController cup = spawnedCups[i];
+            if (cup == null)
+            {
+                spawnedCups.RemoveAt(i);
+                continue;
+            }
+
+            if (cup.contentStates.Count > 0)
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private static void NotifyCupContentAvailabilityChanged()
+    {
+        CupContentAvailabilityChanged?.Invoke(HasAnyCupWithContent());
+    }
+}
