@@ -191,7 +191,11 @@ MonoBehaviour:
   m_StartCorner: 0
   m_StartAxis: 0
   m_CellSize: {x: 420, y: 620}
+<<<<<<< Updated upstream
   m_Spacing: {x: 110, y: 55}
+=======
+  m_Spacing: {x: 95, y: 55}
+>>>>>>> Stashed changes
   m_Constraint: 2
   m_ConstraintCount: 1
 --- !u!1 &346087748
