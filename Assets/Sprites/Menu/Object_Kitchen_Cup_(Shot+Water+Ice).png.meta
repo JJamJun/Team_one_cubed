@@ -1,10 +1,10 @@
 fileFormatVersion: 2
-guid: 478ffcfef4bc7134ab51535d715e41eb
+guid: ef7e294b2f59885499a4b63ef70b8aec
 TextureImporter:
   internalIDToNameTable:
   - first:
-      213: 5531096897488556199
-    second: trashcan_temp_image_0
+      213: -2011141448254006113
+    second: Object_Kitchen_Cup_(Shot+Water+Ice)_0
   externalObjects: {}
   serializedVersion: 13
   mipmaps:
@@ -96,17 +96,30 @@ TextureImporter:
     ignorePlatformSupport: 0
     androidETC2FallbackOverride: 0
     forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: WebGL
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
   spriteSheet:
     serializedVersion: 2
     sprites:
     - serializedVersion: 2
-      name: trashcan_temp_image_0
+      name: Object_Kitchen_Cup_(Shot+Water+Ice)_0
       rect:
         serializedVersion: 2
         x: 0
         y: 0
-        width: 298
-        height: 433
+        width: 275
+        height: 402
       alignment: 0
       pivot: {x: 0, y: 0}
       border: {x: 0, y: 0, z: 0, w: 0}
@@ -115,8 +128,8 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: 7a01211c25762cc40800000000000000
-      internalID: 5531096897488556199
+      spriteID: f9c51cf128df614e0800000000000000
+      internalID: -2011141448254006113
       vertices: []
       indices: 
       edges: []
@@ -135,7 +148,7 @@ TextureImporter:
     spriteCustomMetadata:
       entries: []
     nameFileIdTable:
-      trashcan_temp_image_0: 5531096897488556199
+      Object_Kitchen_Cup_(Shot+Water+Ice)_0: -2011141448254006113
   mipmapLimitGroupName: 
   pSDRemoveMatte: 0
   userData: 

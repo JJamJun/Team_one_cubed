@@ -1,10 +1,10 @@
 fileFormatVersion: 2
-guid: 9d5e1f7388d43114f8d06766d9d08b23
+guid: 644eea7b81be3ad4eadbd367c4ce7507
 TextureImporter:
   internalIDToNameTable:
   - first:
-      213: 8688322916653913878
-    second: syrup_temp_image_0
+      213: 2682387113693338678
+    second: Object_Kitchen_Cup_(Tea+Ice)_0
   externalObjects: {}
   serializedVersion: 13
   mipmaps:
@@ -96,17 +96,30 @@ TextureImporter:
     ignorePlatformSupport: 0
     androidETC2FallbackOverride: 0
     forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: WebGL
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
   spriteSheet:
     serializedVersion: 2
     sprites:
     - serializedVersion: 2
-      name: syrup_temp_image_0
+      name: Object_Kitchen_Cup_(Tea+Ice)_0
       rect:
         serializedVersion: 2
         x: 0
         y: 0
-        width: 130
-        height: 314
+        width: 275
+        height: 402
       alignment: 0
       pivot: {x: 0, y: 0}
       border: {x: 0, y: 0, z: 0, w: 0}
@@ -115,8 +128,8 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: 617da05f8af139870800000000000000
-      internalID: 8688322916653913878
+      spriteID: 63cd6c53ed0c93520800000000000000
+      internalID: 2682387113693338678
       vertices: []
       indices: 
       edges: []
@@ -135,7 +148,7 @@ TextureImporter:
     spriteCustomMetadata:
       entries: []
     nameFileIdTable:
-      syrup_temp_image_0: 8688322916653913878
+      Object_Kitchen_Cup_(Tea+Ice)_0: 2682387113693338678
   mipmapLimitGroupName: 
   pSDRemoveMatte: 0
   userData: 

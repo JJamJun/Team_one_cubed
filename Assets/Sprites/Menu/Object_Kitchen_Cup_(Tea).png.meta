@@ -1,10 +1,10 @@
 fileFormatVersion: 2
-guid: 2774d7498b318ff47a33330854c22713
+guid: d773567f3be8d314f9776d9805ce743a
 TextureImporter:
   internalIDToNameTable:
   - first:
-      213: 2037188413943171393
-    second: waterpot_temp_image_0
+      213: -5252616362171879363
+    second: Object_Kitchen_Cup_(Tea)_0
   externalObjects: {}
   serializedVersion: 13
   mipmaps:
@@ -96,17 +96,30 @@ TextureImporter:
     ignorePlatformSupport: 0
     androidETC2FallbackOverride: 0
     forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: WebGL
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
   spriteSheet:
     serializedVersion: 2
     sprites:
     - serializedVersion: 2
-      name: waterpot_temp_image_0
+      name: Object_Kitchen_Cup_(Tea)_0
       rect:
         serializedVersion: 2
         x: 0
         y: 0
-        width: 374
-        height: 398
+        width: 275
+        height: 402
       alignment: 0
       pivot: {x: 0, y: 0}
       border: {x: 0, y: 0, z: 0, w: 0}
@@ -115,8 +128,8 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: 149cf99a11c854c10800000000000000
-      internalID: 2037188413943171393
+      spriteID: d3037578f35fa17b0800000000000000
+      internalID: -5252616362171879363
       vertices: []
       indices: 
       edges: []
@@ -135,7 +148,7 @@ TextureImporter:
     spriteCustomMetadata:
       entries: []
     nameFileIdTable:
-      waterpot_temp_image_0: 2037188413943171393
+      Object_Kitchen_Cup_(Tea)_0: -5252616362171879363
   mipmapLimitGroupName: 
   pSDRemoveMatte: 0
   userData: 

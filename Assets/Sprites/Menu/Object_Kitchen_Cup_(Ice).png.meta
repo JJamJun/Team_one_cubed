@@ -1,10 +1,10 @@
 fileFormatVersion: 2
-guid: a542b27a8a25706428dddd8ae9495d93
+guid: 4e08496024f44044c99dd047da369abe
 TextureImporter:
   internalIDToNameTable:
   - first:
-      213: -7388932332488505439
-    second: cup_temp_image_0
+      213: 1406309260584705832
+    second: Object_Kitchen_Cup_(Ice)_0
   externalObjects: {}
   serializedVersion: 13
   mipmaps:
@@ -96,17 +96,30 @@ TextureImporter:
     ignorePlatformSupport: 0
     androidETC2FallbackOverride: 0
     forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: WebGL
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
   spriteSheet:
     serializedVersion: 2
     sprites:
     - serializedVersion: 2
-      name: cup_temp_image_0
+      name: Object_Kitchen_Cup_(Ice)_0
       rect:
         serializedVersion: 2
         x: 0
         y: 0
-        width: 384
-        height: 344
+        width: 275
+        height: 402
       alignment: 0
       pivot: {x: 0, y: 0}
       border: {x: 0, y: 0, z: 0, w: 0}
@@ -115,8 +128,8 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: 1a7cf9c113d357990800000000000000
-      internalID: -7388932332488505439
+      spriteID: 82f5e7152d6348310800000000000000
+      internalID: 1406309260584705832
       vertices: []
       indices: 
       edges: []
@@ -135,7 +148,7 @@ TextureImporter:
     spriteCustomMetadata:
       entries: []
     nameFileIdTable:
-      cup_temp_image_0: -7388932332488505439
+      Object_Kitchen_Cup_(Ice)_0: 1406309260584705832
   mipmapLimitGroupName: 
   pSDRemoveMatte: 0
   userData: 
