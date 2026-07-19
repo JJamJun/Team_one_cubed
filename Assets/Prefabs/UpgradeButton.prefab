@@ -109,7 +109,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
   m_AnchorMax: {x: 1, y: 1}
-  m_AnchoredPosition: {x: 0, y: -2.3330078}
+  m_AnchoredPosition: {x: 0, y: -13.7}
   m_SizeDelta: {x: 272, y: -12.666016}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!222 &6913433756768921702
@@ -426,7 +426,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: -79, y: -75}
+  m_AnchoredPosition: {x: -79, y: -61.6}
   m_SizeDelta: {x: 79.9675, y: 42}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!222 &3692782551963253481
@@ -564,7 +564,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: -66, y: -117}
+  m_AnchoredPosition: {x: -47.77, y: -102.7}
   m_SizeDelta: {x: 230.5395, y: 42}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!222 &4505178354203162029
@@ -701,8 +701,8 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: 0, y: 83}
-  m_SizeDelta: {x: 326.6166, y: 372.08}
+  m_AnchoredPosition: {x: -0, y: 88.187}
+  m_SizeDelta: {x: 317.5111, y: 361.71}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!222 &4711377682868883318
 CanvasRenderer:
@@ -776,8 +776,8 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: 178.60016, y: 0}
-  m_SizeDelta: {x: 139.6899, y: 42}
+  m_AnchoredPosition: {x: 167.47617, y: 0}
+  m_SizeDelta: {x: 117.4419, y: 42}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!222 &7272508637690192580
 CanvasRenderer:
@@ -1361,7 +1361,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: 0}
+  m_Sprite: {fileID: 950215196047470252, guid: ba617b3654f07554f84730e8ce5ef6b2, type: 3}
   m_Type: 0
   m_PreserveAspect: 0
   m_FillCenter: 1
@@ -1724,7 +1724,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: 50.1, y: -74.99999}
+  m_AnchoredPosition: {x: 50.1, y: -61.6}
   m_SizeDelta: {x: 73.7374, y: 42}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!222 &6958958997996361840
@@ -1861,8 +1861,8 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: -74.9, y: 1.7000008}
-  m_SizeDelta: {x: 25, y: 25}
+  m_AnchoredPosition: {x: -138, y: 4.9}
+  m_SizeDelta: {x: 77.3736, y: 47.0859}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!222 &2427208917037922530
 CanvasRenderer:
@@ -1885,14 +1885,14 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Image
   m_Material: {fileID: 0}
-  m_Color: {r: 1, g: 0.95686066, b: 0, a: 1}
+  m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_RaycastTarget: 1
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
   m_Maskable: 1
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: 0}
+  m_Sprite: {fileID: -3741206361889794070, guid: 2bfff594d355fb34491e5270353fdd11, type: 3}
   m_Type: 0
   m_PreserveAspect: 0
   m_FillCenter: 1
@@ -2073,11 +2073,11 @@ RectTransform:
   - {fileID: 9142059614021539610}
   m_Father: {fileID: 8146328010418281254}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 0.5, y: 0.5}
-  m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: 0, y: -34.2}
-  m_SizeDelta: {x: 135, y: 48}
-  m_Pivot: {x: 0.5, y: 0.5}
+  m_AnchorMin: {x: 0.5, y: 0}
+  m_AnchorMax: {x: 0.5, y: 0}
+  m_AnchoredPosition: {x: 42.5, y: -44.8}
+  m_SizeDelta: {x: 234.4637, y: 79.1299}
+  m_Pivot: {x: 0.5, y: 0}
 --- !u!222 &8173649201452814466
 CanvasRenderer:
   m_ObjectHideFlags: 0
@@ -2133,8 +2133,8 @@ MonoBehaviour:
   m_faceColor:
     serializedVersion: 2
     rgba: 4294967295
-  m_fontSize: 24
-  m_fontSizeBase: 24
+  m_fontSize: 39.7
+  m_fontSizeBase: 39.7
   m_fontWeight: 400
   m_enableAutoSizing: 0
   m_fontSizeMin: 12

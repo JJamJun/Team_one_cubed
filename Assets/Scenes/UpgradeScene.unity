@@ -275,7 +275,7 @@ RectTransform:
   m_AnchorMin: {x: 0, y: 0.5}
   m_AnchorMax: {x: 0, y: 0.5}
   m_AnchoredPosition: {x: 0, y: 0}
-  m_SizeDelta: {x: 0, y: 760}
+  m_SizeDelta: {x: 0, y: 320}
   m_Pivot: {x: 0, y: 0.5}
 --- !u!114 &344306336
 MonoBehaviour:
@@ -304,15 +304,15 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.GridLayoutGroup
   m_Padding:
-    m_Left: 80
-    m_Right: 80
-    m_Top: 70
-    m_Bottom: 70
+    m_Left: 24
+    m_Right: 24
+    m_Top: 18
+    m_Bottom: 18
   m_ChildAlignment: 3
   m_StartCorner: 0
   m_StartAxis: 0
-  m_CellSize: {x: 420, y: 620}
-  m_Spacing: {x: 95, y: 55}
+  m_CellSize: {x: 210, y: 310}
+  m_Spacing: {x: 24, y: 20}
   m_Constraint: 2
   m_ConstraintCount: 1
 --- !u!1 &346087748
@@ -745,7 +745,7 @@ RectTransform:
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
   m_AnchoredPosition: {x: 0, y: 0}
-  m_SizeDelta: {x: 1700, y: 850}
+  m_SizeDelta: {x: 620, y: 340}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!1 &1109618573
 GameObject:
@@ -1403,9 +1403,9 @@ MonoBehaviour:
   unlockSaveFileName: menu_progress.json
   walletSaveFileName: player_wallet.json
   contentRoot: {fileID: 344306335}
-  upgradeButtonPrefab: {fileID: 7329797152903308257, guid: 95b1b19e9966658418a1f402a0765000, type: 3}
+  upgradeButtonPrefab: {fileID: 7329797152903308257, guid: 5d69d4a4de4e47338c272fa8a3ca153e, type: 3}
   menuSprites:
-  - {fileID: -7000219178407590964, guid: d37cc4a7c3ea5f749a0c4d03abe2b87b, type: 3}
+  - {fileID: 4405641808140667554, guid: 737bff79434e3e145bd94d4d003b95e9, type: 3}
   - {fileID: 2682387113693338678, guid: 644eea7b81be3ad4eadbd367c4ce7507, type: 3}
   - {fileID: 2143861055002758193, guid: 322794e2db583e94b9e3960f9c464d15, type: 3}
   - {fileID: -2011141448254006113, guid: ef7e294b2f59885499a4b63ef70b8aec, type: 3}
@@ -1418,7 +1418,7 @@ MonoBehaviour:
   revealedButtonFadeInDuration: 0.6
   resourceIconTextGap: 8
   maxDisplayedAmount: 999999
-  buttonSpacing: 95
+  buttonSpacing: 24
   generatedButtonPrefix: UpgradeButton_
   debugCoinButtonName: "\uB514\uBC84\uADF8_coin_999"
   debugSoulButtonName: "\uB514\uBC84\uADF8_soul_999"

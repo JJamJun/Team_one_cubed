@@ -26,6 +26,7 @@ public class CupDragController : MonoBehaviour, IPointerDownHandler, IDragHandle
     [SerializeField] private RectTransform trashCanArea;
     [SerializeField] private RectTransform iceMachineArea;
     [SerializeField] private RectTransform coffeeMachineArea;
+    [SerializeField] private RectTransform coffeeMachinePosArea;
     [SerializeField] private RectTransform syrupSnapArea;
     [SerializeField] private RectTransform syrupPosArea;
     [SerializeField] private RectTransform cookingStartArea;
@@ -34,6 +35,17 @@ public class CupDragController : MonoBehaviour, IPointerDownHandler, IDragHandle
     [SerializeField] private RectTransform canvasRect;
     [SerializeField] private bool hideOnStart = true;
     [SerializeField] private bool isTemplate = true;
+    [Header("Cup Content Sprites")]
+    [SerializeField] private Sprite emptyCupSprite;
+    [SerializeField] private Sprite waterCupSprite;
+    [SerializeField] private Sprite iceCupSprite;
+    [SerializeField] private Sprite waterIceCupSprite;
+    [SerializeField] private Sprite teaCupSprite;
+    [SerializeField] private Sprite teaIceCupSprite;
+    [SerializeField] private Sprite shotCupSprite;
+    [SerializeField] private Sprite shotIceCupSprite;
+    [SerializeField] private Sprite shotWaterCupSprite;
+    [SerializeField] private Sprite shotWaterIceCupSprite;
 
     private Camera eventCamera;
     private bool isDragging;
@@ -53,6 +65,8 @@ public class CupDragController : MonoBehaviour, IPointerDownHandler, IDragHandle
         {
             cupImage = GetComponent<Image>();
         }
+
+        CaptureDefaultCupSprite();
 
         Canvas canvas = GetComponentInParent<Canvas>();
         if (canvas != null)
@@ -108,6 +122,7 @@ public class CupDragController : MonoBehaviour, IPointerDownHandler, IDragHandle
         RectTransform trashArea,
         RectTransform iceMachineDropArea,
         RectTransform coffeeMachineDropArea,
+        RectTransform coffeeMachineSlotArea,
         RectTransform syrupSnapDropArea,
         RectTransform syrupSlotArea,
         RectTransform cookingStartDropArea,
@@ -120,6 +135,7 @@ public class CupDragController : MonoBehaviour, IPointerDownHandler, IDragHandle
         trashCanArea = trashArea;
         iceMachineArea = iceMachineDropArea;
         coffeeMachineArea = coffeeMachineDropArea;
+        coffeeMachinePosArea = coffeeMachineSlotArea;
         syrupSnapArea = syrupSnapDropArea;
         syrupPosArea = syrupSlotArea;
         cookingStartArea = cookingStartDropArea;
@@ -136,6 +152,8 @@ public class CupDragController : MonoBehaviour, IPointerDownHandler, IDragHandle
         {
             cupImage = GetComponent<Image>();
         }
+
+        CaptureDefaultCupSprite();
 
         Canvas canvas = GetComponentInParent<Canvas>();
         eventCamera = canvas != null && canvas.renderMode != RenderMode.ScreenSpaceOverlay ? canvas.worldCamera : null;
@@ -219,6 +237,7 @@ public class CupDragController : MonoBehaviour, IPointerDownHandler, IDragHandle
         if (IsPointerInside(coffeeMachineArea, eventData))
         {
             ApplyIngredient(CupContentState.CoffeeMachineEd);
+            SnapToCoffeeMachinePos();
         }
 
         if (IsPointerInside(syrupSnapArea, eventData))
@@ -305,12 +324,22 @@ public class CupDragController : MonoBehaviour, IPointerDownHandler, IDragHandle
 
     private void SnapToSyrupPos()
     {
-        if (canvasRect == null || cupRect == null || syrupPosArea == null)
+        SnapToArea(syrupPosArea);
+    }
+
+    private void SnapToCoffeeMachinePos()
+    {
+        SnapToArea(coffeeMachinePosArea);
+    }
+
+    private void SnapToArea(RectTransform targetArea)
+    {
+        if (canvasRect == null || cupRect == null || targetArea == null)
         {
             return;
         }
 
-        Vector2 screenPoint = RectTransformUtility.WorldToScreenPoint(eventCamera, syrupPosArea.position);
+        Vector2 screenPoint = RectTransformUtility.WorldToScreenPoint(eventCamera, targetArea.position);
         if (RectTransformUtility.ScreenPointToLocalPointInRectangle(canvasRect, screenPoint, eventCamera, out Vector2 localPoint))
         {
             cupRect.anchoredPosition = localPoint;
@@ -331,6 +360,7 @@ public class CupDragController : MonoBehaviour, IPointerDownHandler, IDragHandle
 
         cupImage.enabled = true;
         cupImage.raycastTarget = true;
+        UpdateCupSprite();
     }
 
     public void HideForCooking()
@@ -406,6 +436,7 @@ public class CupDragController : MonoBehaviour, IPointerDownHandler, IDragHandle
             contentStates.Add(newState);
         }
 
+        UpdateCupSprite();
         LogContentStates();
         NotifyCupContentAvailabilityChanged();
     }
@@ -413,6 +444,7 @@ public class CupDragController : MonoBehaviour, IPointerDownHandler, IDragHandle
     private void ResetContentStates()
     {
         contentStates.Clear();
+        UpdateCupSprite();
         LogContentStates();
         NotifyCupContentAvailabilityChanged();
     }
@@ -423,6 +455,73 @@ public class CupDragController : MonoBehaviour, IPointerDownHandler, IDragHandle
         contentStates.Add(CupContentState.Failed);
         LogContentStates();
         NotifyCupContentAvailabilityChanged();
+    }
+
+    private void CaptureDefaultCupSprite()
+    {
+        if (emptyCupSprite == null && cupImage != null)
+        {
+            emptyCupSprite = cupImage.sprite;
+        }
+    }
+
+    private void UpdateCupSprite()
+    {
+        if (cupImage == null)
+        {
+            return;
+        }
+
+        Sprite selectedSprite = GetSpriteForCurrentContents();
+        if (selectedSprite != null)
+        {
+            cupImage.sprite = selectedSprite;
+        }
+    }
+
+    private Sprite GetSpriteForCurrentContents()
+    {
+        bool hasTea = contentStates.Contains(CupContentState.IceTeaEd);
+        bool hasWater = contentStates.Contains(CupContentState.WaterPotEd);
+        bool hasIce = contentStates.Contains(CupContentState.IceMachineEd);
+        bool hasShot = contentStates.Contains(CupContentState.CoffeeMachineEd);
+
+        if (hasShot)
+        {
+            if (hasWater && hasIce)
+            {
+                return shotWaterIceCupSprite != null ? shotWaterIceCupSprite : shotWaterCupSprite;
+            }
+
+            if (hasWater)
+            {
+                return shotWaterCupSprite != null ? shotWaterCupSprite : shotCupSprite;
+            }
+
+            if (hasIce)
+            {
+                return shotIceCupSprite != null ? shotIceCupSprite : shotCupSprite;
+            }
+
+            return shotCupSprite;
+        }
+
+        if (hasTea)
+        {
+            return hasIce && teaIceCupSprite != null ? teaIceCupSprite : teaCupSprite;
+        }
+
+        if (hasWater)
+        {
+            return hasIce && waterIceCupSprite != null ? waterIceCupSprite : waterCupSprite;
+        }
+
+        if (hasIce)
+        {
+            return iceCupSprite;
+        }
+
+        return emptyCupSprite;
     }
 
     private void MoveToCupSpriteSetOrigin()

@@ -8,6 +8,7 @@ public class CupDragSource : MonoBehaviour, IPointerDownHandler, IDragHandler, I
     [SerializeField] private RectTransform trashCanArea;
     [SerializeField] private RectTransform iceMachineArea;
     [SerializeField] private RectTransform coffeeMachineArea;
+    [SerializeField] private RectTransform coffeeMachinePosArea;
     [SerializeField] private RectTransform syrupSnapArea;
     [SerializeField] private RectTransform syrupPosArea;
     [SerializeField] private RectTransform cookingStartArea;
@@ -46,6 +47,7 @@ public class CupDragSource : MonoBehaviour, IPointerDownHandler, IDragHandler, I
             trashCanArea,
             iceMachineArea,
             coffeeMachineArea,
+            coffeeMachinePosArea,
             syrupSnapArea,
             syrupPosArea,
             cookingStartArea,

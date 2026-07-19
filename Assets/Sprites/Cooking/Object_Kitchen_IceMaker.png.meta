@@ -1,10 +1,10 @@
 fileFormatVersion: 2
-guid: 3bff741998ff1f646b3c83c06cd7ccd1
+guid: a68089e1bcabffd43861933325efb472
 TextureImporter:
   internalIDToNameTable:
   - first:
-      213: 4543732970883805689
-    second: Object_Kitchen_IceMaker_0
+      213: 2299719919237108413
+    second: Object_Kitchen_IceMaker 1_0
   externalObjects: {}
   serializedVersion: 13
   mipmaps:
@@ -113,7 +113,7 @@ TextureImporter:
     serializedVersion: 2
     sprites:
     - serializedVersion: 2
-      name: Object_Kitchen_IceMaker_0
+      name: Object_Kitchen_IceMaker 1_0
       rect:
         serializedVersion: 2
         x: 0
@@ -128,8 +128,8 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: 9f172c330159e0f30800000000000000
-      internalID: 4543732970883805689
+      spriteID: db29405051f3aef10800000000000000
+      internalID: 2299719919237108413
       vertices: []
       indices: 
       edges: []
@@ -148,7 +148,7 @@ TextureImporter:
     spriteCustomMetadata:
       entries: []
     nameFileIdTable:
-      Object_Kitchen_IceMaker_0: 4543732970883805689
+      Object_Kitchen_IceMaker 1_0: 2299719919237108413
   mipmapLimitGroupName: 
   pSDRemoveMatte: 0
   userData: 
