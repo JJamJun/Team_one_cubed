@@ -1,0 +1,6 @@
+﻿menuID,MenuName,UnlockRequiredPreviousLevel,UnlockPrice,Lv1Price,Lv2Req,Lv2Price,Lv3Req,Lv3Price,Lv4Req,Lv4Price,Lv5Req,Lv5Price
+0,얼음물,0,0,1,5,2,12,4,24,7,45,11
+1,복숭아 아이스티,2,0,3,15,5,50,10,150,15,300,30
+2,아메리카노,2,100,12,35,17,70,24,120,34,190,46
+3,아이스 아메리카노,1,100,10,20,15,100,30,200,40,250,50
+4,아샷추,2,300,30,150,35,300,40,400,50,1000,100
