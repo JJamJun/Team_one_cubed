@@ -1,10 +1,13 @@
 fileFormatVersion: 2
-guid: 152b388dcc3d73b46ab25d39062bb59b
+guid: f001c494fdfeeb148b27e85c79ca3c6a
 TextureImporter:
   internalIDToNameTable:
   - first:
-      213: 2597069895445419809
-    second: Background_Kitchen_0
+      213: 1443686094361107149
+    second: Char_Customer_Eye_1_0
+  - first:
+      213: -494883726495382164
+    second: Char_Customer_Eye_1_1
   externalObjects: {}
   serializedVersion: 13
   mipmaps:
@@ -46,7 +49,7 @@ TextureImporter:
   nPOTScale: 0
   lightmap: 0
   compressionQuality: 50
-  spriteMode: 2
+  spriteMode: 1
   spriteExtrude: 1
   spriteMeshType: 1
   alignment: 0
@@ -96,30 +99,17 @@ TextureImporter:
     ignorePlatformSupport: 0
     androidETC2FallbackOverride: 0
     forceMaximumCompressionQuality_BC6H_BC7: 0
-  - serializedVersion: 4
-    buildTarget: WebGL
-    maxTextureSize: 2048
-    resizeAlgorithm: 0
-    textureFormat: -1
-    textureCompression: 1
-    compressionQuality: 50
-    crunchedCompression: 0
-    allowsAlphaSplitting: 0
-    overridden: 0
-    ignorePlatformSupport: 0
-    androidETC2FallbackOverride: 0
-    forceMaximumCompressionQuality_BC6H_BC7: 0
   spriteSheet:
     serializedVersion: 2
     sprites:
     - serializedVersion: 2
-      name: Background_Kitchen_0
+      name: Char_Customer_Eye_1_0
       rect:
         serializedVersion: 2
-        x: 0
-        y: 0
-        width: 3840
-        height: 2160
+        x: 340
+        y: 1387
+        width: 96
+        height: 48
       alignment: 0
       pivot: {x: 0, y: 0}
       border: {x: 0, y: 0, z: 0, w: 0}
@@ -128,8 +118,30 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: 12792ee5f45aa0420800000000000000
-      internalID: 2597069895445419809
+      spriteID: dca90959ad0090410800000000000000
+      internalID: 1443686094361107149
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Char_Customer_Eye_1_1
+      rect:
+        serializedVersion: 2
+        x: 567
+        y: 1381
+        width: 110
+        height: 55
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: c650f1d6fd1d129f0800000000000000
+      internalID: -494883726495382164
       vertices: []
       indices: 
       edges: []
@@ -148,7 +160,8 @@ TextureImporter:
     spriteCustomMetadata:
       entries: []
     nameFileIdTable:
-      Background_Kitchen_0: 2597069895445419809
+      Char_Customer_Eye_1_0: 1443686094361107149
+      Char_Customer_Eye_1_1: -494883726495382164
   mipmapLimitGroupName: 
   pSDRemoveMatte: 0
   userData: 

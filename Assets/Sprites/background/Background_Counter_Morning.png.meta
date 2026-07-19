@@ -1,10 +1,10 @@
 fileFormatVersion: 2
-guid: 152b388dcc3d73b46ab25d39062bb59b
+guid: ade35e67e481adf48a034c3d3b3de8f0
 TextureImporter:
   internalIDToNameTable:
   - first:
-      213: 2597069895445419809
-    second: Background_Kitchen_0
+      213: 3472634241194053238
+    second: Background_Counter_Morning_0
   externalObjects: {}
   serializedVersion: 13
   mipmaps:
@@ -96,24 +96,11 @@ TextureImporter:
     ignorePlatformSupport: 0
     androidETC2FallbackOverride: 0
     forceMaximumCompressionQuality_BC6H_BC7: 0
-  - serializedVersion: 4
-    buildTarget: WebGL
-    maxTextureSize: 2048
-    resizeAlgorithm: 0
-    textureFormat: -1
-    textureCompression: 1
-    compressionQuality: 50
-    crunchedCompression: 0
-    allowsAlphaSplitting: 0
-    overridden: 0
-    ignorePlatformSupport: 0
-    androidETC2FallbackOverride: 0
-    forceMaximumCompressionQuality_BC6H_BC7: 0
   spriteSheet:
     serializedVersion: 2
     sprites:
     - serializedVersion: 2
-      name: Background_Kitchen_0
+      name: Background_Counter_Morning_0
       rect:
         serializedVersion: 2
         x: 0
@@ -128,8 +115,8 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: 12792ee5f45aa0420800000000000000
-      internalID: 2597069895445419809
+      spriteID: 67eca3d8176413030800000000000000
+      internalID: 3472634241194053238
       vertices: []
       indices: 
       edges: []
@@ -148,7 +135,7 @@ TextureImporter:
     spriteCustomMetadata:
       entries: []
     nameFileIdTable:
-      Background_Kitchen_0: 2597069895445419809
+      Background_Counter_Morning_0: 3472634241194053238
   mipmapLimitGroupName: 
   pSDRemoveMatte: 0
   userData: 
