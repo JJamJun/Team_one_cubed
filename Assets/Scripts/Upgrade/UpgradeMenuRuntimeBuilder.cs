@@ -158,7 +158,7 @@ public class UpgradeMenuRuntimeBuilder : MonoBehaviour
         SetText(buttonObject.transform, "Level", state.level.ToString(CultureInfo.InvariantCulture));
         SetResourceText(buttonObject.transform, "Price", "price_image", entry.GetSalePrice(state.level).ToString(CultureInfo.InvariantCulture));
         SetText(buttonObject.transform, "Req", GetUpgradeRequirementText(entry, state));
-        SetResourceText(buttonObject.transform, "cost", "cost_image", entry.UnlockPrice.ToString(CultureInfo.InvariantCulture), "UpgradeCostText");
+        SetResourceText(buttonObject.transform, "cost", "cost_image", GetDiscountedUnlockPrice(entry).ToString(CultureInfo.InvariantCulture), "UpgradeCostText");
         SetOptionalObjectActive(buttonObject.transform, "soul", false);
         AlignUnlockedInfoTextPairs(buttonObject.transform);
         SetMenuSprite(buttonObject.transform, spriteIndex);
@@ -237,14 +237,15 @@ public class UpgradeMenuRuntimeBuilder : MonoBehaviour
         }
 
         PlayerWalletSaveData walletSaveData = LoadWalletData();
-        if (walletSaveData.coin < entry.UnlockPrice)
+        int unlockPrice = GetDiscountedUnlockPrice(entry);
+        if (walletSaveData.coin < unlockPrice)
         {
             PlayWarningAnimation(buttonObject.transform, "MoneyWARNING");
             Debug.Log($"{nameof(UpgradeMenuRuntimeBuilder)}: Not enough currency to unlock {entry.MenuId}.");
             return;
         }
 
-        walletSaveData.coin -= entry.UnlockPrice;
+        walletSaveData.coin -= unlockPrice;
         SaveWalletData(walletSaveData);
 
         unlockSaveData.SetUnlocked(entry.MenuId, true, 1);
@@ -602,6 +603,11 @@ public class UpgradeMenuRuntimeBuilder : MonoBehaviour
         SetText(root, "Req", GetUpgradeRequirementText(entry, state));
         AlignUnlockedInfoTextPairs(root);
         ApplyUnlockViewState(root, true);
+    }
+
+    private static int GetDiscountedUnlockPrice(UpgradeMenuEntry entry)
+    {
+        return BuffDebuffManager.ApplyLittleGhostUnlockDiscount(entry.UnlockPrice);
     }
 
     private void ApplyUnlockViewState(Transform root, bool isUnlocked)
