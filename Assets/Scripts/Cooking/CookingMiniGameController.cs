@@ -77,10 +77,15 @@ public class CookingMiniGameController : MonoBehaviour
     private bool hasCapturedErrorVisuals;
     private CupDragController activeCookingCup;
     private bool cookingResultApplied;
+    private bool dokkaebiShieldAvailable;
+    private int dokkaebiShieldedIndex = -1;
     private int successCount;
     private float remainingCookingTime;
     private bool timerRunning;
     private float originalTimerWidth;
+    private RectTransform arrowCmdRect;
+    private Vector2 originalArrowCmdAnchoredPosition;
+    private bool hasCapturedArrowCmdPosition;
 
     private void Awake()
     {
@@ -89,6 +94,11 @@ public class CookingMiniGameController : MonoBehaviour
         {
             HideCookingScreen();
         }
+    }
+
+    private void LateUpdate()
+    {
+        UpdateArrowCmdShake();
     }
 
     private void Update()
@@ -117,13 +127,13 @@ public class CookingMiniGameController : MonoBehaviour
             }
         }
 
-        char? pressedArrow = GetPressedArrow();
-        if (!pressedArrow.HasValue)
+        char? pressedCommand = GetPressedCommand();
+        if (!pressedCommand.HasValue)
         {
             return;
         }
 
-        if (pressedArrow.Value == currentCommand[inputIndex])
+        if (pressedCommand.Value == currentCommand[inputIndex])
         {
             wrongIndex = -1;
             inputIndex++;
@@ -140,6 +150,28 @@ public class CookingMiniGameController : MonoBehaviour
         }
         else
         {
+            if (BuffDebuffManager.DokkaebiBuffActive && dokkaebiShieldAvailable)
+            {
+                dokkaebiShieldAvailable = false;
+                dokkaebiShieldedIndex = inputIndex;
+                wrongIndex = -1;
+                inputIndex++;
+
+                if (inputIndex >= currentCommand.Length)
+                {
+                    commandComplete = true;
+                    arrowInputEnabled = false;
+                    timerRunning = false;
+                    escapeExitEnabled = true;
+                    ApplyCookingResult(true);
+                    Debug.Log($"Cooking command complete with Dokkaebi shield: {currentMenuName}");
+                }
+
+                RenderArrowCommand();
+                Debug.Log($"Dokkaebi shield blocked wrong input: {currentMenuName}");
+                return;
+            }
+
             wrongIndex = inputIndex;
             arrowInputEnabled = false;
             timerRunning = false;
@@ -179,9 +211,11 @@ public class CookingMiniGameController : MonoBehaviour
         activeCookingCup = cup;
         cookingResultApplied = false;
         currentMenuName = recipe.MenuName;
-        currentCommand = recipe.ArrowCommand;
+        currentCommand = GetCommandForCooking(recipe);
         inputIndex = 0;
         wrongIndex = -1;
+        dokkaebiShieldAvailable = BuffDebuffManager.DokkaebiBuffActive;
+        dokkaebiShieldedIndex = -1;
         commandComplete = string.IsNullOrEmpty(currentCommand);
         arrowInputEnabled = !commandComplete;
         escapeExitEnabled = commandComplete;
@@ -227,7 +261,10 @@ public class CookingMiniGameController : MonoBehaviour
         timerRunning = false;
         activeCookingCup = null;
         cookingResultApplied = false;
+        dokkaebiShieldAvailable = false;
+        dokkaebiShieldedIndex = -1;
         ResetTimerVisual();
+        ResetArrowCmdShake();
 
         HideRecipeError(false);
 
@@ -384,8 +421,14 @@ public class CookingMiniGameController : MonoBehaviour
         StringBuilder builder = new StringBuilder();
         for (int i = 0; i < commandSequence.Length; i++)
         {
-            char command = char.ToUpperInvariant(commandSequence[i]);
-            switch (command)
+            char rawCommand = commandSequence[i];
+            if (char.IsLower(rawCommand) && rawCommand >= 'a' && rawCommand <= 'z')
+            {
+                builder.Append(char.ToUpperInvariant(rawCommand));
+                continue;
+            }
+
+            switch (rawCommand)
             {
                 case 'U':
                     builder.Append(UpArrow);
@@ -406,12 +449,31 @@ public class CookingMiniGameController : MonoBehaviour
                 case '/':
                     break;
                 default:
-                    Debug.LogWarning($"{nameof(CookingMiniGameController)}: Invalid command '{commandSequence[i]}' in menu '{menuName}'. Use only L, R, U, D.");
+                    if (char.IsUpper(rawCommand) && rawCommand >= 'A' && rawCommand <= 'Z')
+                    {
+                        builder.Append(rawCommand);
+                    }
+                    else
+                    {
+                        Debug.LogWarning($"{nameof(CookingMiniGameController)}: Invalid command '{commandSequence[i]}' in menu '{menuName}'. Use uppercase U/D/L/R for arrows or lowercase letters for keyboard input.");
+                    }
+
                     break;
             }
         }
 
-        return builder.ToString();
+        return BuffDebuffManager.ApplyVirginGhostCommandReduction(builder.ToString());
+    }
+
+    private string GetCommandForCooking(CookingRecipe recipe)
+    {
+        if (!BuffDebuffManager.DokkaebiDebuffActive || recipes.Count == 0)
+        {
+            return recipe.ArrowCommand;
+        }
+
+        CookingRecipe randomRecipe = recipes[UnityEngine.Random.Range(0, recipes.Count)];
+        return randomRecipe != null ? randomRecipe.ArrowCommand : recipe.ArrowCommand;
     }
 
     private bool TryParseIngredientState(string ingredientName, out CupContentState state)
@@ -468,7 +530,7 @@ public class CookingMiniGameController : MonoBehaviour
         return stateSet;
     }
 
-    private char? GetPressedArrow()
+    private char? GetPressedCommand()
     {
         Keyboard keyboard = Keyboard.current;
         if (keyboard == null)
@@ -496,7 +558,31 @@ public class CookingMiniGameController : MonoBehaviour
             return RightArrow;
         }
 
+        for (char command = 'A'; command <= 'Z'; command++)
+        {
+            if (WasLetterPressed(keyboard, command))
+            {
+                return command;
+            }
+        }
+
         return null;
+    }
+
+    private bool WasLetterPressed(Keyboard keyboard, char command)
+    {
+        if (keyboard == null || command < 'A' || command > 'Z')
+        {
+            return false;
+        }
+
+        string keyName = command.ToString();
+        if (!Enum.TryParse(keyName, out Key key))
+        {
+            return false;
+        }
+
+        return keyboard[key].wasPressedThisFrame;
     }
 
     private bool TryHandleEscapeExit()
@@ -530,7 +616,11 @@ public class CookingMiniGameController : MonoBehaviour
         for (int i = 0; i < currentCommand.Length; i++)
         {
             Color color = pendingColor;
-            if (i < inputIndex)
+            if (i == dokkaebiShieldedIndex)
+            {
+                color = BuffDebuffManager.DokkaebiShieldTextColor;
+            }
+            else if (i < inputIndex)
             {
                 color = correctColor;
             }
@@ -587,6 +677,12 @@ public class CookingMiniGameController : MonoBehaviour
                     break;
                 }
             }
+        }
+
+        if (arrowCmdText != null)
+        {
+            arrowCmdRect = arrowCmdText.rectTransform;
+            CaptureArrowCmdPosition();
         }
 
         if (errorText == null)
@@ -704,7 +800,7 @@ public class CookingMiniGameController : MonoBehaviour
 
         if (activeCookingCup != null)
         {
-            activeCookingCup.ShowCookingResult(succeeded);
+            activeCookingCup.ShowCookingResult(succeeded, currentMenuName);
         }
     }
 
@@ -740,7 +836,7 @@ public class CookingMiniGameController : MonoBehaviour
 
     private void UpdateCookingTimer()
     {
-        remainingCookingTime -= Time.deltaTime;
+        remainingCookingTime -= Time.deltaTime * BuffDebuffManager.CookingTimerDecreaseMultiplier;
 
         float safeTimeLimit = Mathf.Max(0.01f, cookingTimeLimit);
         float elapsedRatio = Mathf.Clamp01(1f - remainingCookingTime / safeTimeLimit);
@@ -788,6 +884,42 @@ public class CookingMiniGameController : MonoBehaviour
         else if (timerImage.type == Image.Type.Filled)
         {
             timerImage.fillAmount = 1f - clampedRatio;
+        }
+    }
+
+    private void UpdateArrowCmdShake()
+    {
+        if (!BuffDebuffManager.VirginGhostDebuffActive || arrowCmdRect == null)
+        {
+            ResetArrowCmdShake();
+            return;
+        }
+
+        CaptureArrowCmdPosition();
+        float amplitude = BuffDebuffManager.ShakeAmplitude;
+        float speed = BuffDebuffManager.ShakeSpeed;
+        Vector2 offset = new Vector2(
+            Mathf.Sin(Time.time * speed) * amplitude,
+            Mathf.Cos(Time.time * speed * 1.37f) * amplitude);
+        arrowCmdRect.anchoredPosition = originalArrowCmdAnchoredPosition + offset;
+    }
+
+    private void CaptureArrowCmdPosition()
+    {
+        if (hasCapturedArrowCmdPosition || arrowCmdRect == null)
+        {
+            return;
+        }
+
+        hasCapturedArrowCmdPosition = true;
+        originalArrowCmdAnchoredPosition = arrowCmdRect.anchoredPosition;
+    }
+
+    private void ResetArrowCmdShake()
+    {
+        if (arrowCmdRect != null && hasCapturedArrowCmdPosition)
+        {
+            arrowCmdRect.anchoredPosition = originalArrowCmdAnchoredPosition;
         }
     }
 

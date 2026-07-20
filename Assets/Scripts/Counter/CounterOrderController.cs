@@ -306,7 +306,18 @@ public class CounterOrderController : MonoBehaviour
 
     private void UpdateReceiptMachineClick()
     {
-        if (!orderSubmitted || !WasPrimaryPointerPressedThisFrame())
+        if (!WasPrimaryPointerPressedThisFrame())
+        {
+            return;
+        }
+
+        if (!orderSubmitted && IsPointerOverReceiptMachine0())
+        {
+            MoveToKitchen();
+            return;
+        }
+
+        if (!orderSubmitted)
         {
             return;
         }
@@ -318,12 +329,16 @@ public class CounterOrderController : MonoBehaviour
                 return;
             }
 
-            if (cameraTransition != null)
-            {
-                cameraTransition.MoveToKitchen();
-            }
-
+            MoveToKitchen();
             ClearSubmittedCounterOrder();
+        }
+    }
+
+    private void MoveToKitchen()
+    {
+        if (cameraTransition != null)
+        {
+            cameraTransition.MoveToKitchen();
         }
     }
 
@@ -378,6 +393,66 @@ public class CounterOrderController : MonoBehaviour
             || IsPointerOverReceiptMachineByRect(null)
             || IsPointerOverReceiptMachineByRect(GetEventCamera())
             || IsPointerOverReceiptMachineByRect(Camera.main);
+    }
+
+    private bool IsPointerOverReceiptMachine0()
+    {
+        return IsPointerOverGameObject(receiptMachine0);
+    }
+
+    private bool IsPointerOverGameObject(GameObject targetObject)
+    {
+        if (targetObject == null || !targetObject.activeInHierarchy)
+        {
+            return false;
+        }
+
+        Transform targetTransform = targetObject.transform;
+        if (IsPointerOverTransformByRaycast(targetTransform))
+        {
+            return true;
+        }
+
+        RectTransform targetRect = targetTransform as RectTransform;
+        if (targetRect == null)
+        {
+            return false;
+        }
+
+        return IsPointerOverRect(targetRect, null)
+            || IsPointerOverRect(targetRect, GetEventCamera())
+            || IsPointerOverRect(targetRect, Camera.main);
+    }
+
+    private bool IsPointerOverTransformByRaycast(Transform targetTransform)
+    {
+        if (EventSystem.current == null || targetTransform == null)
+        {
+            return false;
+        }
+
+        PointerEventData pointerEventData = new PointerEventData(EventSystem.current)
+        {
+            position = GetPointerScreenPosition()
+        };
+
+        GraphicRaycaster[] raycasters = FindObjectsByType<GraphicRaycaster>(FindObjectsSortMode.None);
+        for (int i = 0; i < raycasters.Length; i++)
+        {
+            List<RaycastResult> results = new List<RaycastResult>();
+            raycasters[i].Raycast(pointerEventData, results);
+
+            for (int j = 0; j < results.Count; j++)
+            {
+                Transform resultTransform = results[j].gameObject.transform;
+                if (resultTransform == targetTransform || resultTransform.IsChildOf(targetTransform))
+                {
+                    return true;
+                }
+            }
+        }
+
+        return false;
     }
 
     private bool IsPointerOverReceiptMachineByRaycast()
@@ -583,7 +658,7 @@ public class CounterOrderController : MonoBehaviour
                 receipt = slot.AddComponent<Receipt>();
             }
 
-            receipt.Initialize(receiptText);
+            receipt.Initialize(receiptText, i);
             Debug.Log($"{nameof(CounterOrderController)} registered receipt slot {i}: {receiptText}");
             return true;
         }

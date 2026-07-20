@@ -15,6 +15,13 @@ public enum CupContentState
     Failed
 }
 
+public enum CupCookingResultState
+{
+    None,
+    Succeeded,
+    Failed
+}
+
 public class CupDragController : MonoBehaviour, IPointerDownHandler, IDragHandler, IPointerUpHandler
 {
     private static readonly List<CupDragController> spawnedCups = new List<CupDragController>();
@@ -46,13 +53,20 @@ public class CupDragController : MonoBehaviour, IPointerDownHandler, IDragHandle
     [SerializeField] private Sprite shotIceCupSprite;
     [SerializeField] private Sprite shotWaterCupSprite;
     [SerializeField] private Sprite shotWaterIceCupSprite;
+    [SerializeField] private Sprite failedCupSprite;
+    [SerializeField] private Sprite lockedCupSprite;
+    [SerializeField] private GameObject successObject;
 
     private Camera eventCamera;
     private bool isDragging;
     private readonly List<CupContentState> contentStates = new List<CupContentState>();
+    [SerializeField] private CupCookingResultState cookingResultState = CupCookingResultState.None;
+    [SerializeField] private string completedMenuName = string.Empty;
 
     public static IReadOnlyList<CupDragController> SpawnedCups => spawnedCups;
     public IReadOnlyList<CupContentState> ContentStates => contentStates;
+    public CupCookingResultState CookingResultState => cookingResultState;
+    public string CompletedMenuName => completedMenuName;
 
     private void Awake()
     {
@@ -66,7 +80,9 @@ public class CupDragController : MonoBehaviour, IPointerDownHandler, IDragHandle
             cupImage = GetComponent<Image>();
         }
 
+        AutoBindSuccessObject();
         CaptureDefaultCupSprite();
+        SetSuccessVisible(false);
 
         Canvas canvas = GetComponentInParent<Canvas>();
         if (canvas != null)
@@ -153,7 +169,9 @@ public class CupDragController : MonoBehaviour, IPointerDownHandler, IDragHandle
             cupImage = GetComponent<Image>();
         }
 
+        AutoBindSuccessObject();
         CaptureDefaultCupSprite();
+        SetSuccessVisible(false);
 
         Canvas canvas = GetComponentInParent<Canvas>();
         eventCamera = canvas != null && canvas.renderMode != RenderMode.ScreenSpaceOverlay ? canvas.worldCamera : null;
@@ -205,23 +223,16 @@ public class CupDragController : MonoBehaviour, IPointerDownHandler, IDragHandle
         MoveCupToPointer(eventData);
         isDragging = false;
 
-        // =========================================================
-        // NEW FEATURE: check if we dropped the cup onto a Receipt
-        // =========================================================
-        List<RaycastResult> results = new List<RaycastResult>();
-        EventSystem.current.RaycastAll(eventData, results);
-
-        foreach (RaycastResult result in results)
+        Receipt receipt = FindReceiptAtPointer(eventData);
+        if (receipt != null)
         {
-            Receipt receipt = result.gameObject.GetComponent<Receipt>();
-            if (receipt != null)
+            if (receipt.TryFulfillReceipt(this))
             {
-                receipt.TryFulfillReceipt(this);
                 HideCup();
-                return;
             }
+
+            return;
         }
-        // =========================================================
 
         if (IsPointerInsideTrashCan(eventData))
         {
@@ -322,6 +333,42 @@ public class CupDragController : MonoBehaviour, IPointerDownHandler, IDragHandle
         return area != null && RectTransformUtility.RectangleContainsScreenPoint(area, eventData.position, eventCamera);
     }
 
+    private Receipt FindReceiptAtPointer(PointerEventData eventData)
+    {
+        if (EventSystem.current != null)
+        {
+            List<RaycastResult> results = new List<RaycastResult>();
+            EventSystem.current.RaycastAll(eventData, results);
+
+            for (int i = 0; i < results.Count; i++)
+            {
+                Receipt receipt = results[i].gameObject.GetComponentInParent<Receipt>();
+                if (receipt != null && receipt.gameObject.activeInHierarchy)
+                {
+                    return receipt;
+                }
+            }
+        }
+
+        Receipt[] receipts = Resources.FindObjectsOfTypeAll<Receipt>();
+        for (int i = 0; i < receipts.Length; i++)
+        {
+            Receipt receipt = receipts[i];
+            if (receipt == null || !receipt.gameObject.scene.IsValid() || !receipt.gameObject.activeInHierarchy)
+            {
+                continue;
+            }
+
+            RectTransform receiptRect = receipt.transform as RectTransform;
+            if (receiptRect != null && RectTransformUtility.RectangleContainsScreenPoint(receiptRect, eventData.position, eventCamera))
+            {
+                return receipt;
+            }
+        }
+
+        return null;
+    }
+
     private void SnapToSyrupPos()
     {
         SnapToArea(syrupPosArea);
@@ -378,11 +425,23 @@ public class CupDragController : MonoBehaviour, IPointerDownHandler, IDragHandle
 
     public void ShowCookingResult(bool succeeded)
     {
+        ShowCookingResult(succeeded, string.Empty);
+    }
+
+    public void ShowCookingResult(bool succeeded, string menuName)
+    {
         isDragging = false;
+        cookingResultState = succeeded ? CupCookingResultState.Succeeded : CupCookingResultState.Failed;
+        completedMenuName = succeeded ? menuName : string.Empty;
+        SetSuccessVisible(succeeded);
 
         if (!succeeded)
         {
             SetFailedState();
+        }
+        else
+        {
+            UpdateCupSprite();
         }
 
         gameObject.SetActive(true);
@@ -444,6 +503,9 @@ public class CupDragController : MonoBehaviour, IPointerDownHandler, IDragHandle
     private void ResetContentStates()
     {
         contentStates.Clear();
+        cookingResultState = CupCookingResultState.None;
+        completedMenuName = string.Empty;
+        SetSuccessVisible(false);
         UpdateCupSprite();
         LogContentStates();
         NotifyCupContentAvailabilityChanged();
@@ -453,6 +515,7 @@ public class CupDragController : MonoBehaviour, IPointerDownHandler, IDragHandle
     {
         contentStates.Clear();
         contentStates.Add(CupContentState.Failed);
+        UpdateCupSprite();
         LogContentStates();
         NotifyCupContentAvailabilityChanged();
     }
@@ -481,6 +544,16 @@ public class CupDragController : MonoBehaviour, IPointerDownHandler, IDragHandle
 
     private Sprite GetSpriteForCurrentContents()
     {
+        if (cookingResultState == CupCookingResultState.Failed)
+        {
+            return failedCupSprite != null ? failedCupSprite : emptyCupSprite;
+        }
+
+        if (BuffDebuffManager.LittleGhostDebuffActive && lockedCupSprite != null)
+        {
+            return lockedCupSprite;
+        }
+
         bool hasTea = contentStates.Contains(CupContentState.IceTeaEd);
         bool hasWater = contentStates.Contains(CupContentState.WaterPotEd);
         bool hasIce = contentStates.Contains(CupContentState.IceMachineEd);
@@ -522,6 +595,29 @@ public class CupDragController : MonoBehaviour, IPointerDownHandler, IDragHandle
         }
 
         return emptyCupSprite;
+    }
+
+    private void AutoBindSuccessObject()
+    {
+        if (successObject != null)
+        {
+            return;
+        }
+
+        Transform successTransform = transform.Find("Success");
+        if (successTransform != null)
+        {
+            successObject = successTransform.gameObject;
+        }
+    }
+
+    private void SetSuccessVisible(bool visible)
+    {
+        AutoBindSuccessObject();
+        if (successObject != null)
+        {
+            successObject.SetActive(visible);
+        }
     }
 
     private void MoveToCupSpriteSetOrigin()
