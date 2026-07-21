@@ -174,10 +174,13 @@ public class CustomerController : MonoBehaviour
                 break;
 
             case CustomerState.WaitingForDrink:
+                //set visible to false
+                visuals?.SetVisible(false);
                 StopBobbing();
                 break;
 
             case CustomerState.Completed:
+                visuals?.SetVisible(true);
                 visuals?.SetHappy();
 
                 string chosenLine = "Thank you!";
