@@ -53,6 +53,9 @@ public class CustomerController : MonoBehaviour
     public GhostType CustomerGhostType => ghostType;
     public bool IsHappy { get; private set; }
 
+    public int TotalDrinksOrdered { get; private set; }
+
+
     private void Awake()
     {
         if (rectTransform == null) rectTransform = GetComponent<RectTransform>();
@@ -75,6 +78,11 @@ public class CustomerController : MonoBehaviour
         if (orderTextLabel != null) orderTextLabel.text = text;
     }
 
+    public void SetOrderText(string text, int totalDrinks)
+    {
+        if (orderTextLabel != null) orderTextLabel.text = text;
+        TotalDrinksOrdered = totalDrinks;
+    }
     public void Spawn()
     {
         if (spawnLocation != null) rectTransform.anchoredPosition = spawnLocation.anchoredPosition;

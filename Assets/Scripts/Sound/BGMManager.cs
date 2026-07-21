@@ -58,23 +58,44 @@ public class BgmManager : MonoBehaviour
         if (bgmPlaylist == null || bgmPlaylist.Length == 0) return;
 
         isCrossfading = true;
-        int nextSourceIndex = 1 - currentSourceIndex; 
+        int nextSourceIndex = 1 - currentSourceIndex;
         AudioSource activeSource = bgmSources[currentSourceIndex];
         AudioSource nextSource = bgmSources[nextSourceIndex];
 
+        //ramdom clip
         AudioClip nextClip = bgmPlaylist[Random.Range(0, bgmPlaylist.Length)];
+
+        //prevent same clip replay
+        if (bgmPlaylist.Length > 1)
+        {
+            while (nextClip == activeSource.clip)
+            {
+                nextClip = bgmPlaylist[Random.Range(0, bgmPlaylist.Length)];
+            }
+        }
+
         nextSource.clip = nextClip;
         nextSource.volume = 0f;
-        nextSource.Play();
 
-        //crossfade the volumes
-        activeSource.DOFade(0f, crossfadeDuration).OnComplete(() => activeSource.Stop());
-        nextSource.DOFade(1f, crossfadeDuration).OnComplete(() => isCrossfading = false);
+        float halfFade = crossfadeDuration * 0.5f;
+
+        //fade out to 0
+        activeSource.DOFade(0f, halfFade).OnComplete(() =>
+        {
+            activeSource.Stop();
+
+            //fade in from 0
+            nextSource.Play();
+            nextSource.DOFade(1f, halfFade).OnComplete(() =>
+            {
+                isCrossfading = false;
+            });
+        });
 
         currentSourceIndex = nextSourceIndex;
     }
 
-    // Called by the GhostEffectDirector
+
     public void SetMuffled(bool isMuffled)
     {
         float targetCutoff = isMuffled ? muffledCutoff : normalCutoff;

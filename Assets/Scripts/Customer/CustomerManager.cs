@@ -85,6 +85,8 @@ public class CustomerManager : MonoBehaviour
                 {
                     customer.OrderFulfilled();
 
+                    GameStatsManager.Instance?.RegisterCustomerSuccess(customer.TotalDrinksOrdered);
+
                     if (stationScroller != null)
                     {
                         stationScroller.MoveToPickup();
@@ -161,6 +163,7 @@ public class CustomerManager : MonoBehaviour
         if (currentCustomerAtCounter != null)
         {
             currentCustomerAtCounter.OnCustomerLeft += HandleCustomerLeft;
+            GameStatsManager.Instance?.RegisterCustomerArrival();
 
             if (spawningGhost)
             {
@@ -173,7 +176,8 @@ public class CustomerManager : MonoBehaviour
             }
 
             currentCustomerAtCounter.InitializeWaypoints(spawnPoint, counterPoint, pickupPoint, exitPoint);
-            currentCustomerAtCounter.SetOrderText(GenerateRandomOrder());
+            string generatedOrderText = GenerateRandomOrder(out int totalDrinks);
+            currentCustomerAtCounter.SetOrderText(generatedOrderText, totalDrinks);
             currentCustomerAtCounter.Spawn();
         }
         else
@@ -183,10 +187,11 @@ public class CustomerManager : MonoBehaviour
     }
 
 
-    private string GenerateRandomOrder()
+    private string GenerateRandomOrder(out int totalDrinkCount)
     {
         int itemCount = Random.Range(1, maxItemsInOrder + 1);
         Dictionary<string, int> orderCounts = new Dictionary<string, int>();
+        totalDrinkCount = 0; //track total!!! why bake straight into string bruh :( 
 
         for (int i = 0; i < itemCount; i++)
         {
@@ -199,6 +204,7 @@ public class CustomerManager : MonoBehaviour
             {
                 orderCounts[randomMenu] = 1;
             }
+            totalDrinkCount++; 
         }
 
         System.Text.StringBuilder orderBuilder = new System.Text.StringBuilder();
