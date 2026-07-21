@@ -36,4 +36,11 @@ public class UIStationScoller : MonoBehaviour
         mainContentPanel.DOLocalMoveX(-slideDistance, transitionDuration).SetEase(transitionEase);
         Debug.Log("Sliding to Kitchen!");
     }
+
+    public void MoveToPickup()
+    {
+        mainContentPanel.DOKill();
+        mainContentPanel.DOLocalMoveX(-slideDistance * 2f, transitionDuration).SetEase(transitionEase);
+        Debug.Log("Sliding to Pickup!");
+    }
 }

@@ -24,15 +24,33 @@ public class CustomerManager : MonoBehaviour
     [SerializeField, Min(1)] private int maxItemsInOrder = 3;
     [SerializeField] private TextAsset menuInfoCsv;
 
+    [Header("Dependencies")]
+    [SerializeField] private UIStationScoller stationScroller;
+
     private float spawnTimer;
     private bool isCounterOccupied;
     private CustomerController currentCustomerAtCounter;
+    private CustomerController activeGhost; 
     private readonly List<string> availableMenus = new List<string>();
+
+    private Dictionary<int, CustomerController> waitingCustomers = new Dictionary<int, CustomerController>();
 
     private void Awake()
     {
         LoadAvailableMenus();
         ResetSpawnTimer();
+    }
+
+    private void OnEnable()
+    {
+        CounterOrderController.OnReceiptPrinted += HandleReceiptPrinted;
+        Receipt.ReceiptSlotEmptied += HandleReceiptEmptied;
+    }
+
+    private void OnDisable()
+    {
+        CounterOrderController.OnReceiptPrinted -= HandleReceiptPrinted;
+        Receipt.ReceiptSlotEmptied -= HandleReceiptEmptied;
     }
 
     private void Update()
@@ -41,12 +59,62 @@ public class CustomerManager : MonoBehaviour
         MonitorCounterState();
     }
 
+    // --- Core Logic ---
+
+    private void HandleReceiptPrinted(int slotIndex)
+    {
+        if (currentCustomerAtCounter != null && currentCustomerAtCounter.CurrentState == CustomerState.Ordering)
+        {
+            waitingCustomers[slotIndex] = currentCustomerAtCounter;
+            currentCustomerAtCounter.AcceptOrder();
+
+            currentCustomerAtCounter = null;
+            isCounterOccupied = false;
+            ResetSpawnTimer();
+        }
+    }
+
+    private void HandleReceiptEmptied(int slotIndex, bool isSuccess)
+    {
+        if (waitingCustomers.TryGetValue(slotIndex, out CustomerController customer))
+        {
+            if (customer != null)
+            {
+                if (isSuccess)
+                {
+                    customer.OrderFulfilled();
+
+                    if (stationScroller != null)
+                    {
+                        stationScroller.MoveToPickup();
+                    }
+                }
+                else
+                {
+                    customer.OrderFailed();
+                }
+            }
+
+            waitingCustomers.Remove(slotIndex);
+        }
+    }
+
+    private void HandleCustomerLeft(CustomerController customer)
+    {
+        customer.OnCustomerLeft -= HandleCustomerLeft; //unsubscribe to prevent memory leaks
+
+        if (customer == activeGhost)
+        {
+            activeGhost = null; 
+            Debug.Log("Ghost left, new ghost can spawn");
+        }
+    }
+
+    // --- Spawning Logic ---
+
     private void ManageSpawning()
     {
-        if (isCounterOccupied || availableMenus.Count == 0)
-        {
-            return;
-        }
+        if (isCounterOccupied || availableMenus.Count == 0) return;
 
         spawnTimer -= Time.deltaTime;
         if (spawnTimer <= 0f)
@@ -57,12 +125,8 @@ public class CustomerManager : MonoBehaviour
 
     private void MonitorCounterState()
     {
-        if (!isCounterOccupied || currentCustomerAtCounter == null)
-        {
-            return;
-        }
+        if (!isCounterOccupied || currentCustomerAtCounter == null) return;
 
-        //if the customer is no longer arriving or ordering, they have left the counter
         CustomerState state = currentCustomerAtCounter.CurrentState;
         if (state != CustomerState.Arriving && state != CustomerState.Ordering)
         {
@@ -75,31 +139,36 @@ public class CustomerManager : MonoBehaviour
     private void SpawnCustomer()
     {
         isCounterOccupied = true;
+        bool spawningGhost = false;
 
-        //determine whether to spawn a ghost or normal customer
         GameObject prefabToSpawn = normalCustomerPrefab;
-        if (ghostCustomerPrefabs != null && ghostCustomerPrefabs.Length > 0 && Random.value <= ghostChance)
+
+        // NEW: Only roll for a ghost if there isn't one already in the store
+        if (activeGhost == null && ghostCustomerPrefabs != null && ghostCustomerPrefabs.Length > 0 && Random.value <= ghostChance)
         {
             prefabToSpawn = ghostCustomerPrefabs[Random.Range(0, ghostCustomerPrefabs.Length)];
+            spawningGhost = true;
         }
 
-        //instantiate and initialize
         GameObject customerObj = Instantiate(prefabToSpawn, customerContainer);
         currentCustomerAtCounter = customerObj.GetComponent<CustomerController>();
 
         if (currentCustomerAtCounter != null)
         {
+            // NEW: Subscribe to the leave event
+            currentCustomerAtCounter.OnCustomerLeft += HandleCustomerLeft;
+
+            if (spawningGhost)
+            {
+                activeGhost = currentCustomerAtCounter;
+            }
+
             currentCustomerAtCounter.InitializeWaypoints(spawnPoint, counterPoint, pickupPoint, exitPoint);
-
-            //generate a random order text to display in the bubble
-            string orderText = GenerateRandomOrder();
-            currentCustomerAtCounter.SetOrderText(orderText);
-
+            currentCustomerAtCounter.SetOrderText(GenerateRandomOrder());
             currentCustomerAtCounter.Spawn();
         }
         else
         {
-            Debug.LogWarning("Spawned customer prefab is missing CustomerController");
             isCounterOccupied = false;
         }
     }
@@ -133,16 +202,11 @@ public class CustomerManager : MonoBehaviour
 
     private void LoadAvailableMenus()
     {
-        if (menuInfoCsv == null)
-        {
-            Debug.LogWarning("CustomerManager: menu_info CSV is missing");
-            return;
-        }
+        if (menuInfoCsv == null) return;
 
         string[] lines = menuInfoCsv.text.Split(new[] { '\r', '\n' }, System.StringSplitOptions.RemoveEmptyEntries);
         if (lines.Length <= 1) return;
 
-        //start at 1 to skip the header row
         for (int i = 1; i < lines.Length; i++)
         {
             string[] cells = lines[i].Split(',');

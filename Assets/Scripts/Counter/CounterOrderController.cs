@@ -37,6 +37,8 @@ public class CounterOrderController : MonoBehaviour
     private readonly List<OrderLine> submittedOrderLines = new List<OrderLine>();
     private bool orderSubmitted;
 
+    public static event System.Action<int> OnReceiptPrinted;
+
     private void Awake()
     {
         AutoBindMissingReferences();
@@ -660,6 +662,9 @@ public class CounterOrderController : MonoBehaviour
 
             receipt.Initialize(receiptText, i);
             Debug.Log($"{nameof(CounterOrderController)} registered receipt slot {i}: {receiptText}");
+           
+            OnReceiptPrinted?.Invoke(i);
+
             return true;
         }
 

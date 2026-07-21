@@ -7,7 +7,7 @@ using UnityEngine.UI;
 
 public class Receipt : MonoBehaviour
 {
-    public static event Action<int> ReceiptSlotEmptied;
+    public static event Action<int, bool> ReceiptSlotEmptied;
 
     [SerializeField] private TMP_Text orderNameText;
     [SerializeField] private string receiptText;
@@ -58,7 +58,7 @@ public class Receipt : MonoBehaviour
         }
 
         Debug.Log($"\uC601\uC218\uC99D {GetDisplaySlotIndex()}\uBC88\uC9F8: \uC2DC\uAC04 \uCD08\uACFC!");
-        ClearReceiptSlot();
+        ClearReceiptSlot(false);
     }
 
     private void LateUpdate()
@@ -124,7 +124,7 @@ public class Receipt : MonoBehaviour
             if (orderLines.Count == 0)
             {
                 Debug.Log($"\uC601\uC218\uC99D {GetDisplaySlotIndex()}\uBC88\uC9F8: \uC8FC\uBB38 \uC644\uC218!");
-                ClearReceiptSlot();
+                ClearReceiptSlot(true);
             }
 
             return true;
@@ -207,7 +207,7 @@ public class Receipt : MonoBehaviour
         return builder.ToString();
     }
 
-    private void ClearReceiptSlot()
+    private void ClearReceiptSlot(bool success)
     {
         timerRunning = false;
         UpdateTimerVisual(0f);
@@ -217,7 +217,7 @@ public class Receipt : MonoBehaviour
             receiptImage.color = originalReceiptColor;
         }
 
-        ReceiptSlotEmptied?.Invoke(slotIndex);
+        ReceiptSlotEmptied?.Invoke(slotIndex, success);
         Debug.Log($"{nameof(Receipt)} slot emptied: {slotIndex}");
         gameObject.SetActive(false);
     }
