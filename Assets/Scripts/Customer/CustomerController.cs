@@ -1,7 +1,8 @@
+using DG.Tweening;
 using System;
+using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
-using DG.Tweening;
 
 public enum CustomerState
 {
@@ -22,6 +23,8 @@ public class CustomerController : MonoBehaviour
     [SerializeField] private RectTransform rectTransform;
     [SerializeField] private GameObject speechBubble;
     [SerializeField] private Image patienceMeterFill;
+    [SerializeField] private TMP_Text orderTextLabel;
+
 
     [Header("Movement Waypoints")]
     [SerializeField] private RectTransform spawnLocation;
@@ -36,6 +39,7 @@ public class CustomerController : MonoBehaviour
 
     [Header("Patience Settings")]
     [SerializeField] private float maxPatience = 15f;
+
 
     private CustomerState currentState;
     private float currentPatience;
@@ -94,6 +98,16 @@ public class CustomerController : MonoBehaviour
             ChangeState(CustomerState.Angry);
         }
     }
+
+    public void SetOrderText(string text)
+    {
+        if (orderTextLabel != null)
+        {
+            orderTextLabel.text = text;
+        }
+    }
+
+
 
     // --- External Triggers ---
 

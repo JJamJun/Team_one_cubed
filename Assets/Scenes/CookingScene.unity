@@ -3306,6 +3306,67 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   syrupButton: {fileID: 602497346}
   syrupPosArea: {fileID: 1033191770}
+--- !u!1 &636718267
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 636718269}
+  - component: {fileID: 636718268}
+  m_Layer: 0
+  m_Name: CustomerManager
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &636718268
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 636718267}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 86ddd9369cb42ae4a8b31aed46b5718f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: '::'
+  normalCustomerPrefab: {fileID: 6878515608184258484, guid: 5b4f2e700010b744cbe43b5c809e0042, type: 3}
+  ghostCustomerPrefabs:
+  - {fileID: 529608224103624032, guid: 1c097e950f876254e93bd1e5fc9a6c6d, type: 3}
+  - {fileID: 7675431329432844413, guid: 5c07db780c43e564280ba67f8df61512, type: 3}
+  - {fileID: 2825123730595449969, guid: 1f672ff5c9184d24c954e260ebc45191, type: 3}
+  - {fileID: 1071526108186220346, guid: 40996b5050b9a34468b5e96fa1664abb, type: 3}
+  - {fileID: 1646418924598763839, guid: 7a8b7694688176d42a5930fbbb43c9ae, type: 3}
+  customerContainer: {fileID: 2147066855}
+  spawnPoint: {fileID: 1831221235}
+  counterPoint: {fileID: 311265753}
+  pickupPoint: {fileID: 799958497}
+  exitPoint: {fileID: 1192930157}
+  minSpawnTime: 5
+  maxSpawnTime: 12
+  ghostChance: 0.2
+  maxItemsInOrder: 3
+  menuInfoCsv: {fileID: 4900000, guid: 46e3ca984147f8c46a9cf6d445df973c, type: 3}
+--- !u!4 &636718269
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 636718267}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 2.12486, y: -1.9465, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &640739569
 GameObject:
   m_ObjectHideFlags: 0
@@ -8658,7 +8719,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: 1920, y: 0}
+  m_AnchoredPosition: {x: 1920, y: 39}
   m_SizeDelta: {x: 5760, y: 1080}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!1660057539 &9223372036854775807
@@ -8670,3 +8731,4 @@ SceneRoots:
   - {fileID: 925094473}
   - {fileID: 1860607916}
   - {fileID: 216000002}
+  - {fileID: 636718269}
