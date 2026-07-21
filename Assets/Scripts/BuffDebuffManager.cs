@@ -89,4 +89,25 @@ public class BuffDebuffManager : MonoBehaviour
         float remainRatio = 1f - Mathf.Clamp01(Instance.unlockCostDiscountRatio);
         return Mathf.Max(0, Mathf.RoundToInt(cost * remainRatio));
     }
+    public void ToggleGhostDebuffs(GhostType type, bool isActive)
+    {
+        switch (type)
+        {
+            case GhostType.Woman:
+                virginGhostDebuffActive = isActive;
+                break;
+            case GhostType.DeadLion:
+                grimReaperDebuffActive = isActive;
+                break;
+            case GhostType.Dokaebi:
+                dokkaebiDebuffActive = isActive;
+                break;
+            case GhostType.Little:
+                littleGhostDebuffActive = isActive;
+                break;
+        }
+
+        Debug.Log($"BuffDebuffManager: {type} debuff set to {isActive}");
+    }
 }
+

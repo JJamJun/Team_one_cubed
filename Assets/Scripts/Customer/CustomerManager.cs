@@ -26,11 +26,12 @@ public class CustomerManager : MonoBehaviour
 
     [Header("Dependencies")]
     [SerializeField] private UIStationScoller stationScroller;
+    [SerializeField] private GhostEffectDirector ghostEffectDirector; 
 
     private float spawnTimer;
     private bool isCounterOccupied;
     private CustomerController currentCustomerAtCounter;
-    private CustomerController activeGhost; 
+    private CustomerController activeGhost;
     private readonly List<string> availableMenus = new List<string>();
 
     private Dictionary<int, CustomerController> waitingCustomers = new Dictionary<int, CustomerController>();
@@ -101,12 +102,17 @@ public class CustomerManager : MonoBehaviour
 
     private void HandleCustomerLeft(CustomerController customer)
     {
-        customer.OnCustomerLeft -= HandleCustomerLeft; //unsubscribe to prevent memory leaks
+        customer.OnCustomerLeft -= HandleCustomerLeft;
 
         if (customer == activeGhost)
         {
-            activeGhost = null; 
-            Debug.Log("Ghost left, new ghost can spawn");
+            if (ghostEffectDirector != null)
+            {
+                ghostEffectDirector.TriggerGhostDeparture(activeGhost.CustomerGhostType, activeGhost.IsHappy);
+            }
+
+            activeGhost = null;
+            Debug.Log("The ghost has left the building. A new ghost can now spawn.");
         }
     }
 
@@ -143,7 +149,6 @@ public class CustomerManager : MonoBehaviour
 
         GameObject prefabToSpawn = normalCustomerPrefab;
 
-        // NEW: Only roll for a ghost if there isn't one already in the store
         if (activeGhost == null && ghostCustomerPrefabs != null && ghostCustomerPrefabs.Length > 0 && Random.value <= ghostChance)
         {
             prefabToSpawn = ghostCustomerPrefabs[Random.Range(0, ghostCustomerPrefabs.Length)];
@@ -155,12 +160,16 @@ public class CustomerManager : MonoBehaviour
 
         if (currentCustomerAtCounter != null)
         {
-            // NEW: Subscribe to the leave event
             currentCustomerAtCounter.OnCustomerLeft += HandleCustomerLeft;
 
             if (spawningGhost)
             {
                 activeGhost = currentCustomerAtCounter;
+
+                if (ghostEffectDirector != null)
+                {
+                    ghostEffectDirector.TriggerGhostArrival(activeGhost.CustomerGhostType);
+                }
             }
 
             currentCustomerAtCounter.InitializeWaypoints(spawnPoint, counterPoint, pickupPoint, exitPoint);
@@ -172,6 +181,7 @@ public class CustomerManager : MonoBehaviour
             isCounterOccupied = false;
         }
     }
+
 
     private string GenerateRandomOrder()
     {

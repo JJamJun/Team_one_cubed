@@ -4,27 +4,28 @@ using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
+public enum GhostType
+{
+    None, DeadLion, Little, Woman, Eight, Dokaebi
+}
+
 public enum CustomerState
 {
-    Arriving,
-    Ordering,
-    MovingToPickup,
-    WaitingForDrink,
-    Completed,
-    Angry,
-    Leaving
+    Arriving, Ordering, MovingToPickup, WaitingForDrink, Completed, Angry, Leaving
 }
 
 public class CustomerController : MonoBehaviour
 {
     public event Action<CustomerController> OnCustomerLeft;
 
+    [Header("Customer Identity")]
+    [SerializeField] private GhostType ghostType = GhostType.None;
+
     [Header("UI References")]
     [SerializeField] private RectTransform rectTransform;
     [SerializeField] private GameObject speechBubble;
-    [SerializeField] private Image patienceMeterFill;
     [SerializeField] private TMP_Text orderTextLabel;
-
+    [SerializeField] private Image patienceMeterFill;
 
     [Header("Movement Waypoints")]
     [SerializeField] private RectTransform spawnLocation;
@@ -36,17 +37,21 @@ public class CustomerController : MonoBehaviour
     [SerializeField] private float arrivalDuration = 1.5f;
     [SerializeField] private float moveDuration = 1.0f;
     [SerializeField] private float bobbingAmplitude = 20f;
+    [SerializeField] private float bobbingSpeed = 0.2f;
 
     [Header("Patience Settings")]
     [SerializeField] private float maxPatience = 15f;
 
-
     private CustomerState currentState;
     private float currentPatience;
     private Tween movementTween;
+    private Sequence bobbingSequence;
     private ICustomerVisuals visuals;
+    private float currentFootstepVolume = 1f;
 
     public CustomerState CurrentState => currentState;
+    public GhostType CustomerGhostType => ghostType;
+    public bool IsHappy { get; private set; }
 
     private void Awake()
     {
@@ -64,13 +69,18 @@ public class CustomerController : MonoBehaviour
         pickupLocation = pickup;
         exitLocation = exit;
     }
+
+    public void SetOrderText(string text)
+    {
+        if (orderTextLabel != null) orderTextLabel.text = text;
+    }
+
     public void Spawn()
     {
-        if (spawnLocation != null)
-        {
-            rectTransform.anchoredPosition = spawnLocation.anchoredPosition;
-        }
+        if (spawnLocation != null) rectTransform.anchoredPosition = spawnLocation.anchoredPosition;
 
+        IsHappy = false;
+        currentFootstepVolume = 1f;
         visuals?.SetNeutral();
         currentPatience = maxPatience;
         ChangeState(CustomerState.Arriving);
@@ -88,41 +98,20 @@ public class CustomerController : MonoBehaviour
     {
         currentPatience -= Time.deltaTime;
 
-        if (patienceMeterFill != null)
-        {
-            patienceMeterFill.fillAmount = Mathf.Clamp01(currentPatience / maxPatience);
-        }
-
-        if (currentPatience <= 0f)
-        {
-            ChangeState(CustomerState.Angry);
-        }
+        if (patienceMeterFill != null) patienceMeterFill.fillAmount = Mathf.Clamp01(currentPatience / maxPatience);
+        if (currentPatience <= 0f) ChangeState(CustomerState.Angry);
     }
-
-    public void SetOrderText(string text)
-    {
-        if (orderTextLabel != null)
-        {
-            orderTextLabel.text = text;
-        }
-    }
-
-
-
-    // --- External Triggers ---
 
     public void AcceptOrder()
     {
-        if (currentState == CustomerState.Ordering)
-        {
-            ChangeState(CustomerState.MovingToPickup);
-        }
+        if (currentState == CustomerState.Ordering) ChangeState(CustomerState.MovingToPickup);
     }
 
     public void OrderFulfilled()
     {
         if (currentState == CustomerState.WaitingForDrink)
         {
+            IsHappy = true;
             ChangeState(CustomerState.Completed);
         }
     }
@@ -131,11 +120,10 @@ public class CustomerController : MonoBehaviour
     {
         if (currentState == CustomerState.WaitingForDrink)
         {
+            IsHappy = false;
             ChangeState(CustomerState.Angry);
         }
     }
-
-    // --- Core State Machine ---
 
     private void ChangeState(CustomerState newState)
     {
@@ -146,24 +134,23 @@ public class CustomerController : MonoBehaviour
         {
             case CustomerState.Arriving:
                 Vector2 targetCounter = counterLocation != null ? counterLocation.anchoredPosition : Vector2.zero;
-
                 movementTween = rectTransform.DOAnchorPos(targetCounter, arrivalDuration)
-                    .SetEase(Ease.OutQuad)
+                    .SetEase(Ease.Linear)
                     .OnComplete(() => ChangeState(CustomerState.Ordering));
 
-                rectTransform.DOAnchorPosY(targetCounter.y + bobbingAmplitude, 0.25f)
-                    .SetLoops(-1, LoopType.Yoyo).SetEase(Ease.InOutSine)
-                    .SetId("Bobbing");
+                StartBobbing(targetCounter.y);
                 break;
 
             case CustomerState.Ordering:
-                DOTween.Kill("Bobbing");
-                if (counterLocation != null)
-                {
-                    rectTransform.anchoredPosition = counterLocation.anchoredPosition;
-                }
-
+                StopBobbing();
+                if (counterLocation != null) rectTransform.anchoredPosition = counterLocation.anchoredPosition;
                 if (speechBubble != null) speechBubble.SetActive(true);
+
+                //bell sound when customer ready to order
+                if (SoundManager.Instance != null && SoundManager.Instance.SFX != null)
+                {
+                    SoundManager.Instance.SFX.PlayBell();
+                }
                 break;
 
             case CustomerState.MovingToPickup:
@@ -171,40 +158,44 @@ public class CustomerController : MonoBehaviour
                 if (patienceMeterFill != null) patienceMeterFill.transform.parent.gameObject.SetActive(false);
 
                 Vector2 targetPickup = pickupLocation != null ? pickupLocation.anchoredPosition : Vector2.zero;
-
                 movementTween = rectTransform.DOAnchorPos(targetPickup, moveDuration)
-                    .SetEase(Ease.InOutQuad)
+                    .SetEase(Ease.Linear)
                     .OnComplete(() => ChangeState(CustomerState.WaitingForDrink));
+
+                StartBobbing(targetPickup.y);
                 break;
 
             case CustomerState.WaitingForDrink:
+                StopBobbing();
                 break;
 
             case CustomerState.Completed:
                 visuals?.SetHappy();
-                Debug.Log("Customer is happy");
                 DOVirtual.DelayedCall(2f, LeaveScreen);
                 break;
 
             case CustomerState.Angry:
-                DOTween.Kill("Bobbing");
+                StopBobbing();
                 if (speechBubble != null) speechBubble.SetActive(false);
 
                 visuals?.SetAngry();
-                Debug.Log("Customer is angry");
                 DOVirtual.DelayedCall(1f, LeaveScreen);
                 break;
 
             case CustomerState.Leaving:
                 Vector2 targetExit = exitLocation != null ? exitLocation.anchoredPosition : Vector2.zero;
-
                 movementTween = rectTransform.DOAnchorPos(targetExit, moveDuration)
-                    .SetEase(Ease.InQuad)
+                    .SetEase(Ease.Linear)
                     .OnComplete(() =>
                     {
                         OnCustomerLeft?.Invoke(this);
                         Destroy(gameObject);
                     });
+
+                StartBobbing(targetExit.y);
+
+                //footstep volume fade out when leaving
+                DOTween.To(() => currentFootstepVolume, x => currentFootstepVolume = x, 0f, moveDuration);
                 break;
         }
     }
@@ -212,5 +203,34 @@ public class CustomerController : MonoBehaviour
     private void LeaveScreen()
     {
         ChangeState(CustomerState.Leaving);
+    }
+
+    
+
+    private void StartBobbing(float baseY)
+    {
+        StopBobbing(); //clear sequences
+
+        bobbingSequence = DOTween.Sequence();
+
+        //up
+        bobbingSequence.Append(rectTransform.DOAnchorPosY(baseY + bobbingAmplitude, bobbingSpeed).SetEase(Ease.OutSine));
+
+        //down and audio
+        bobbingSequence.Append(rectTransform.DOAnchorPosY(baseY, bobbingSpeed).SetEase(Ease.InSine).OnComplete(() =>
+        {
+            if (SoundManager.Instance != null && SoundManager.Instance.SFX != null)
+            {
+                SoundManager.Instance.SFX.PlayFootstep(ghostType, currentFootstepVolume);
+            }
+        }));
+
+        //loop until stopped
+        bobbingSequence.SetLoops(-1);
+    }
+
+    private void StopBobbing()
+    {
+        bobbingSequence?.Kill();
     }
 }

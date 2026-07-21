@@ -54,4 +54,11 @@ public class NormalCustomerVisuals : MonoBehaviour, ICustomerVisuals
         if (angryEyes != null && eyesImage != null) eyesImage.sprite = angryEyes;
         if (angryMouth != null && mouthImage != null) mouthImage.sprite = angryMouth;
     }
+    public void SetVisible(bool isVisible)
+    {
+        if (clothesImage != null) clothesImage.gameObject.SetActive(isVisible);
+        if (hairImage != null) hairImage.gameObject.SetActive(isVisible);
+        if (eyesImage != null) eyesImage.gameObject.SetActive(isVisible);
+        if (mouthImage != null) mouthImage.gameObject.SetActive(isVisible);
+    }
 }

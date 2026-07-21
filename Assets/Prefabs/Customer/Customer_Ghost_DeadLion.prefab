@@ -51,10 +51,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: a6789e954cb98e546a0094db684ff815, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::CustomerController
+  ghostType: 1
   rectTransform: {fileID: 2985194647919288269}
   speechBubble: {fileID: 5141404083554821580}
-  patienceMeterFill: {fileID: 8029867273682808128}
   orderTextLabel: {fileID: 1275268484103719226}
+  patienceMeterFill: {fileID: 8029867273682808128}
   spawnLocation: {fileID: 0}
   counterLocation: {fileID: 0}
   pickupLocation: {fileID: 0}
