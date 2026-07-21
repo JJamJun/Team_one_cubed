@@ -1,8 +1,10 @@
 using DG.Tweening;
 using System;
+using System.Collections;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
+using UnityEngine.InputSystem;
 
 public enum GhostType
 {
@@ -42,6 +44,11 @@ public class CustomerController : MonoBehaviour
     [Header("Patience Settings")]
     [SerializeField] private float maxPatience = 15f;
 
+    [Header("Dialogue Settings")]
+    [SerializeField] private string[] successDialogues = { "감사합니다!","감사합니다~","좋은 하루 되세요~!" }; //default for generic
+    [SerializeField] private float typeSpeed = 0.05f;
+    [SerializeField] private float readDelayAfterTyping = 1.0f;
+
     private CustomerState currentState;
     private float currentPatience;
     private Tween movementTween;
@@ -52,9 +59,7 @@ public class CustomerController : MonoBehaviour
     public CustomerState CurrentState => currentState;
     public GhostType CustomerGhostType => ghostType;
     public bool IsHappy { get; private set; }
-
     public int TotalDrinksOrdered { get; private set; }
-
 
     private void Awake()
     {
@@ -73,16 +78,12 @@ public class CustomerController : MonoBehaviour
         exitLocation = exit;
     }
 
-    public void SetOrderText(string text)
-    {
-        if (orderTextLabel != null) orderTextLabel.text = text;
-    }
-
     public void SetOrderText(string text, int totalDrinks)
     {
         if (orderTextLabel != null) orderTextLabel.text = text;
         TotalDrinksOrdered = totalDrinks;
     }
+
     public void Spawn()
     {
         if (spawnLocation != null) rectTransform.anchoredPosition = spawnLocation.anchoredPosition;
@@ -154,7 +155,6 @@ public class CustomerController : MonoBehaviour
                 if (counterLocation != null) rectTransform.anchoredPosition = counterLocation.anchoredPosition;
                 if (speechBubble != null) speechBubble.SetActive(true);
 
-                //bell sound when customer ready to order
                 if (SoundManager.Instance != null && SoundManager.Instance.SFX != null)
                 {
                     SoundManager.Instance.SFX.PlayBell();
@@ -179,7 +179,14 @@ public class CustomerController : MonoBehaviour
 
             case CustomerState.Completed:
                 visuals?.SetHappy();
-                DOVirtual.DelayedCall(2f, LeaveScreen);
+
+                string chosenLine = "Thank you!";
+                if (successDialogues != null && successDialogues.Length > 0)
+                {
+                    chosenLine = successDialogues[UnityEngine.Random.Range(0, successDialogues.Length)];
+                }
+
+                StartCoroutine(TypeDialogue(chosenLine));
                 break;
 
             case CustomerState.Angry:
@@ -201,8 +208,6 @@ public class CustomerController : MonoBehaviour
                     });
 
                 StartBobbing(targetExit.y);
-
-                //footstep volume fade out when leaving
                 DOTween.To(() => currentFootstepVolume, x => currentFootstepVolume = x, 0f, moveDuration);
                 break;
         }
@@ -213,18 +218,44 @@ public class CustomerController : MonoBehaviour
         ChangeState(CustomerState.Leaving);
     }
 
-    
+    private IEnumerator TypeDialogue(string message)
+    {
+        if (speechBubble != null) speechBubble.SetActive(true);
+        if (orderTextLabel != null) orderTextLabel.text = "";
+
+        bool isSkipping = false;
+
+        for (int i = 0; i < message.Length; i++)
+        {
+            if (orderTextLabel != null)
+            {
+                orderTextLabel.text += message[i];
+            }
+
+            if (Keyboard.current != null && Keyboard.current.spaceKey.isPressed)
+            {
+                isSkipping = true;
+            }
+            else
+            {
+                isSkipping = false;
+            }
+
+            if (!isSkipping)
+            {
+                yield return new WaitForSeconds(typeSpeed);
+            }
+        }
+
+        yield return new WaitForSeconds(readDelayAfterTyping);
+        LeaveScreen();
+    }
 
     private void StartBobbing(float baseY)
     {
-        StopBobbing(); //clear sequences
-
+        StopBobbing();
         bobbingSequence = DOTween.Sequence();
-
-        //up
         bobbingSequence.Append(rectTransform.DOAnchorPosY(baseY + bobbingAmplitude, bobbingSpeed).SetEase(Ease.OutSine));
-
-        //down and audio
         bobbingSequence.Append(rectTransform.DOAnchorPosY(baseY, bobbingSpeed).SetEase(Ease.InSine).OnComplete(() =>
         {
             if (SoundManager.Instance != null && SoundManager.Instance.SFX != null)
@@ -232,8 +263,6 @@ public class CustomerController : MonoBehaviour
                 SoundManager.Instance.SFX.PlayFootstep(ghostType, currentFootstepVolume);
             }
         }));
-
-        //loop until stopped
         bobbingSequence.SetLoops(-1);
     }
 
