@@ -256,7 +256,7 @@ public class CupDragController : MonoBehaviour, IPointerDownHandler, IDragHandle
             SnapToSyrupPos();
         }
 
-        if (contentStates.Count > 0 && IsPointerInside(cookingStartArea, eventData))
+        if (HasCookableContent() && IsPointerInside(cookingStartArea, eventData))
         {
             TryStartCooking();
         }
@@ -291,7 +291,7 @@ public class CupDragController : MonoBehaviour, IPointerDownHandler, IDragHandle
 
     public void ApplyIngredient(CupContentState newState)
     {
-        if (!IsCupVisible())
+        if (!IsCupVisible() || cookingResultState != CupCookingResultState.None)
         {
             return;
         }
@@ -490,14 +490,38 @@ public class CupDragController : MonoBehaviour, IPointerDownHandler, IDragHandle
             return;
         }
 
-        if (!contentStates.Contains(newState))
+        bool addedNewState = !contentStates.Contains(newState);
+        if (addedNewState)
         {
             contentStates.Add(newState);
+            PlayIngredientSfx(newState);
         }
 
         UpdateCupSprite();
         LogContentStates();
         NotifyCupContentAvailabilityChanged();
+    }
+
+    private void PlayIngredientSfx(CupContentState newState)
+    {
+        if (SoundManager.Instance == null || SoundManager.Instance.SFX == null)
+        {
+            return;
+        }
+
+        switch (newState)
+        {
+            case CupContentState.IceMachineEd:
+                SoundManager.Instance.SFX.PlayIceCube();
+                break;
+            case CupContentState.IceTeaEd:
+            case CupContentState.WaterPotEd:
+                SoundManager.Instance.SFX.PlayPouringWater();
+                break;
+            case CupContentState.CoffeeMachineEd:
+                SoundManager.Instance.SFX.PlayMachine();
+                break;
+        }
     }
 
     private void ResetContentStates()
@@ -669,13 +693,20 @@ public class CupDragController : MonoBehaviour, IPointerDownHandler, IDragHandle
                 continue;
             }
 
-            if (cup.contentStates.Count > 0)
+            if (cup.HasCookableContent())
             {
                 return true;
             }
         }
 
         return false;
+    }
+
+    private bool HasCookableContent()
+    {
+        return cookingResultState == CupCookingResultState.None
+            && contentStates.Count > 0
+            && !contentStates.Contains(CupContentState.Failed);
     }
 
     private static void NotifyCupContentAvailabilityChanged()

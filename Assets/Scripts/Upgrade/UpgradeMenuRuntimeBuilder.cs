@@ -1129,9 +1129,17 @@ public class UpgradeMenuRuntimeBuilder : MonoBehaviour
         {
             if (!saveData.Contains(entry.MenuId))
             {
-                saveData.menus.Add(new MenuUnlockState { menuID = entry.MenuId, isUnlocked = false, level = 0 });
+                saveData.menus.Add(CreateDefaultUnlockState(entry.MenuId));
                 changed = true;
             }
+        }
+
+        MenuUnlockState defaultMenuState = saveData.GetOrCreate("0");
+        if (!defaultMenuState.isUnlocked || defaultMenuState.level <= 0)
+        {
+            defaultMenuState.isUnlocked = true;
+            defaultMenuState.level = 1;
+            changed = true;
         }
 
         if (changed)
@@ -1147,10 +1155,21 @@ public class UpgradeMenuRuntimeBuilder : MonoBehaviour
         MenuUnlockSaveData saveData = new MenuUnlockSaveData();
         foreach (UpgradeMenuEntry entry in entries)
         {
-            saveData.menus.Add(new MenuUnlockState { menuID = entry.MenuId, isUnlocked = false, level = 0 });
+            saveData.menus.Add(CreateDefaultUnlockState(entry.MenuId));
         }
 
         return saveData;
+    }
+
+    private static MenuUnlockState CreateDefaultUnlockState(string menuId)
+    {
+        bool isDefaultUnlocked = menuId == "0";
+        return new MenuUnlockState
+        {
+            menuID = menuId,
+            isUnlocked = isDefaultUnlocked,
+            level = isDefaultUnlocked ? 1 : 0
+        };
     }
 
     private MenuUnlockSaveData LoadUnlockData()

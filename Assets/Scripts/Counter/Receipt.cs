@@ -7,7 +7,7 @@ using UnityEngine.UI;
 
 public class Receipt : MonoBehaviour
 {
-    public static event Action<int, bool> ReceiptSlotEmptied;
+    public static event Action<int, bool, string> ReceiptSlotEmptied;
 
     [SerializeField] private TMP_Text orderNameText;
     [SerializeField] private string receiptText;
@@ -16,6 +16,7 @@ public class Receipt : MonoBehaviour
     [SerializeField] private RecepitTimerManager timerManager;
 
     private readonly List<ReceiptLine> orderLines = new List<ReceiptLine>();
+    private string originalReceiptText;
     private float timerRemaining;
     private float timerMaxDuration;
     private bool timerRunning;
@@ -76,6 +77,7 @@ public class Receipt : MonoBehaviour
         AutoBindText();
         this.slotIndex = slotIndex;
         this.receiptText = receiptText;
+        originalReceiptText = receiptText;
         ParseReceiptText(receiptText);
         RefreshText();
         StartTimer();
@@ -217,9 +219,27 @@ public class Receipt : MonoBehaviour
             receiptImage.color = originalReceiptColor;
         }
 
-        ReceiptSlotEmptied?.Invoke(slotIndex, success);
+        PlayReceiptResultSfx(success);
+        ReceiptSlotEmptied?.Invoke(slotIndex, success, originalReceiptText);
         Debug.Log($"{nameof(Receipt)} slot emptied: {slotIndex}");
         gameObject.SetActive(false);
+    }
+
+    private void PlayReceiptResultSfx(bool success)
+    {
+        if (SoundManager.Instance == null || SoundManager.Instance.SFX == null)
+        {
+            return;
+        }
+
+        if (success)
+        {
+            SoundManager.Instance.SFX.PlayMoney();
+        }
+        else
+        {
+            SoundManager.Instance.SFX.PlayFail();
+        }
     }
 
     private void AutoBindText()

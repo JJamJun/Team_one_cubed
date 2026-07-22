@@ -6,8 +6,18 @@ public class SfxManager : MonoBehaviour
 {
     [Header("General SFX")]
     [SerializeField] private AudioClip bellDingSfx;
+    [SerializeField] private AudioClip clickSfx;
 
     //TODO: add more sfx as needed like for minigame and stuff 
+
+    [Header("Cooking SFX")]
+    [SerializeField] private AudioClip iceCubeSfx;
+    [SerializeField] private AudioClip pouringWaterSfx;
+    [SerializeField] private AudioClip machineSfx;
+
+    [Header("Receipt SFX")]
+    [SerializeField] private AudioClip moneySfx;
+    [SerializeField] private AudioClip failSfx;
 
     [Header("Footstep SFX")]
     [SerializeField] private AudioClip normalFootstep;
@@ -29,6 +39,36 @@ public class SfxManager : MonoBehaviour
         {
             sfxSource.PlayOneShot(bellDingSfx);
         }
+    }
+
+    public void PlayClick()
+    {
+        PlaySfx(clickSfx);
+    }
+
+    public void PlayIceCube()
+    {
+        PlaySfx(iceCubeSfx);
+    }
+
+    public void PlayPouringWater()
+    {
+        PlaySfx(pouringWaterSfx);
+    }
+
+    public void PlayMachine()
+    {
+        PlaySfx(machineSfx);
+    }
+
+    public void PlayMoney()
+    {
+        PlaySfx(moneySfx);
+    }
+
+    public void PlayFail()
+    {
+        PlaySfx(failSfx);
     }
 
     public void PlayFootstep(GhostType ghostType, float volume)

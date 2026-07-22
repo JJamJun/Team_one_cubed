@@ -38,6 +38,8 @@ public class CookingMiniGameController : MonoBehaviour
     private const char LeftArrow = '\u2190';
     private const char RightArrow = '\u2192';
 
+    public static bool IsCookingMiniGameOpen { get; private set; }
+
     [SerializeField] private GameObject cookingSpriteRoot;
     [SerializeField] private TMP_Text arrowCmdText;
     [SerializeField] private TMP_Text errorText;
@@ -59,10 +61,17 @@ public class CookingMiniGameController : MonoBehaviour
     [SerializeField] private float cookingTimeLimit = 10f;
     [SerializeField] private Color timerStartColor = Color.green;
     [SerializeField] private Color timerEndColor = Color.red;
+    [Header("Virgin Ghost Command Shake")]
+    [SerializeField, Min(0f)] private float virginGhostCommandShakeAmplitude = 6f;
+    [SerializeField, Min(0f)] private float virginGhostCommandShakeSpeed = 26f;
+    [SerializeField, Min(0f)] private float virginGhostCommandShakeHorizontalRange = 14f;
+    [SerializeField, Min(0f)] private float virginGhostCommandShakeVerticalRange = 14f;
+    [SerializeField, Range(0f, 1f)] private float virginGhostCommandShakeRandomness = 0.75f;
 
     private readonly List<CookingRecipe> recipes = new List<CookingRecipe>();
     private bool initialized;
     private bool recipesLoaded;
+    private string currentBaseCommand = string.Empty;
     private string currentCommand = string.Empty;
     private string currentMenuName = string.Empty;
     private int inputIndex;
@@ -86,6 +95,8 @@ public class CookingMiniGameController : MonoBehaviour
     private RectTransform arrowCmdRect;
     private Vector2 originalArrowCmdAnchoredPosition;
     private bool hasCapturedArrowCmdPosition;
+    private bool arrowCmdMeshWasShaken;
+    private bool lastVirginGhostBuffActive;
 
     private void Awake()
     {
@@ -98,7 +109,7 @@ public class CookingMiniGameController : MonoBehaviour
 
     private void LateUpdate()
     {
-        UpdateArrowCmdShake();
+        UpdateArrowCmdCharacterShake();
     }
 
     private void Update()
@@ -107,6 +118,8 @@ public class CookingMiniGameController : MonoBehaviour
         {
             return;
         }
+
+        RefreshCommandBuffState();
 
         if (!arrowInputEnabled || string.IsNullOrEmpty(currentCommand))
         {
@@ -207,11 +220,14 @@ public class CookingMiniGameController : MonoBehaviour
 
     private void StartCooking(CookingRecipe recipe, CupDragController cup, IReadOnlyList<CupContentState> cupStates)
     {
+        IsCookingMiniGameOpen = true;
         hasCookingAttemptStarted = true;
         activeCookingCup = cup;
         cookingResultApplied = false;
         currentMenuName = recipe.MenuName;
-        currentCommand = GetCommandForCooking(recipe);
+        currentBaseCommand = GetBaseCommandForCooking(recipe);
+        lastVirginGhostBuffActive = BuffDebuffManager.VirginGhostBuffActive;
+        currentCommand = BuffDebuffManager.ApplyVirginGhostCommandReduction(currentBaseCommand);
         inputIndex = 0;
         wrongIndex = -1;
         dokkaebiShieldAvailable = BuffDebuffManager.DokkaebiBuffActive;
@@ -246,12 +262,14 @@ public class CookingMiniGameController : MonoBehaviour
 
     private void HideCookingScreen()
     {
+        IsCookingMiniGameOpen = false;
         if (arrowCmdText != null)
         {
             arrowCmdText.text = string.Empty;
         }
 
         currentMenuName = string.Empty;
+        currentBaseCommand = string.Empty;
         currentCommand = string.Empty;
         inputIndex = 0;
         wrongIndex = -1;
@@ -264,7 +282,7 @@ public class CookingMiniGameController : MonoBehaviour
         dokkaebiShieldAvailable = false;
         dokkaebiShieldedIndex = -1;
         ResetTimerVisual();
-        ResetArrowCmdShake();
+        ResetArrowCmdCharacterShake();
 
         HideRecipeError(false);
 
@@ -462,10 +480,10 @@ public class CookingMiniGameController : MonoBehaviour
             }
         }
 
-        return BuffDebuffManager.ApplyVirginGhostCommandReduction(builder.ToString());
+        return builder.ToString();
     }
 
-    private string GetCommandForCooking(CookingRecipe recipe)
+    private string GetBaseCommandForCooking(CookingRecipe recipe)
     {
         if (!BuffDebuffManager.DokkaebiDebuffActive || recipes.Count == 0)
         {
@@ -474,6 +492,30 @@ public class CookingMiniGameController : MonoBehaviour
 
         CookingRecipe randomRecipe = recipes[UnityEngine.Random.Range(0, recipes.Count)];
         return randomRecipe != null ? randomRecipe.ArrowCommand : recipe.ArrowCommand;
+    }
+
+    private void RefreshCommandBuffState()
+    {
+        bool currentVirginGhostBuffActive = BuffDebuffManager.VirginGhostBuffActive;
+        if (currentVirginGhostBuffActive == lastVirginGhostBuffActive)
+        {
+            return;
+        }
+
+        lastVirginGhostBuffActive = currentVirginGhostBuffActive;
+        if (string.IsNullOrEmpty(currentBaseCommand))
+        {
+            return;
+        }
+
+        currentCommand = BuffDebuffManager.ApplyVirginGhostCommandReduction(currentBaseCommand);
+        inputIndex = Mathf.Clamp(inputIndex, 0, currentCommand.Length);
+        wrongIndex = -1;
+        commandComplete = string.IsNullOrEmpty(currentCommand) || inputIndex >= currentCommand.Length;
+        arrowInputEnabled = !commandComplete;
+        escapeExitEnabled = commandComplete;
+        RenderArrowCommand();
+        Debug.Log($"Virgin ghost buff command refresh: {currentMenuName} {currentBaseCommand.Length}->{currentCommand.Length}");
     }
 
     private bool TryParseIngredientState(string ingredientName, out CupContentState state)
@@ -887,21 +929,77 @@ public class CookingMiniGameController : MonoBehaviour
         }
     }
 
-    private void UpdateArrowCmdShake()
+    private void UpdateArrowCmdCharacterShake()
     {
-        if (!BuffDebuffManager.VirginGhostDebuffActive || arrowCmdRect == null)
+        if (!BuffDebuffManager.VirginGhostDebuffActive || arrowCmdText == null)
         {
-            ResetArrowCmdShake();
+            ResetArrowCmdCharacterShake();
+            return;
+        }
+
+        if (cookingSpriteRoot != null && !cookingSpriteRoot.activeInHierarchy)
+        {
+            ResetArrowCmdCharacterShake();
             return;
         }
 
         CaptureArrowCmdPosition();
-        float amplitude = BuffDebuffManager.ShakeAmplitude;
-        float speed = BuffDebuffManager.ShakeSpeed;
-        Vector2 offset = new Vector2(
-            Mathf.Sin(Time.time * speed) * amplitude,
-            Mathf.Cos(Time.time * speed * 1.37f) * amplitude);
-        arrowCmdRect.anchoredPosition = originalArrowCmdAnchoredPosition + offset;
+        if (arrowCmdRect != null)
+        {
+            arrowCmdRect.anchoredPosition = originalArrowCmdAnchoredPosition;
+        }
+
+        arrowCmdText.ForceMeshUpdate();
+
+        TMP_TextInfo textInfo = arrowCmdText.textInfo;
+        float intensity = virginGhostCommandShakeAmplitude;
+        float speed = virginGhostCommandShakeSpeed;
+        for (int i = 0; i < textInfo.characterCount; i++)
+        {
+            TMP_CharacterInfo characterInfo = textInfo.characterInfo[i];
+            if (!characterInfo.isVisible)
+            {
+                continue;
+            }
+
+            int materialIndex = characterInfo.materialReferenceIndex;
+            int vertexIndex = characterInfo.vertexIndex;
+            Vector3[] vertices = textInfo.meshInfo[materialIndex].vertices;
+            Vector3 offset = GetVirginGhostCharacterShakeOffset(i, speed, intensity);
+
+            vertices[vertexIndex] += offset;
+            vertices[vertexIndex + 1] += offset;
+            vertices[vertexIndex + 2] += offset;
+            vertices[vertexIndex + 3] += offset;
+        }
+
+        for (int i = 0; i < textInfo.meshInfo.Length; i++)
+        {
+            textInfo.meshInfo[i].mesh.vertices = textInfo.meshInfo[i].vertices;
+            arrowCmdText.UpdateGeometry(textInfo.meshInfo[i].mesh, i);
+        }
+
+        arrowCmdMeshWasShaken = true;
+    }
+
+    private Vector3 GetVirginGhostCharacterShakeOffset(int characterIndex, float speed, float intensity)
+    {
+        float seed = characterIndex * 37.719f + 11.37f;
+        float randomRatio = Mathf.Clamp01(virginGhostCommandShakeRandomness);
+        float time = Time.time * Mathf.Max(0f, speed);
+        float xSpeed = Mathf.Lerp(1f, 0.47f + Hash01(seed + 1.13f) * 1.46f, randomRatio);
+        float ySpeed = Mathf.Lerp(1f, 0.51f + Hash01(seed + 2.71f) * 1.58f, randomRatio);
+        float xRange = virginGhostCommandShakeHorizontalRange * Mathf.Lerp(1f, 0.45f + Hash01(seed + 4.29f) * 1.35f, randomRatio);
+        float yRange = virginGhostCommandShakeVerticalRange * Mathf.Lerp(1f, 0.45f + Hash01(seed + 8.61f) * 1.35f, randomRatio);
+
+        float x = (Mathf.PerlinNoise(seed, time * xSpeed) - 0.5f) * 2f * xRange;
+        float y = (Mathf.PerlinNoise(seed + 100f, time * ySpeed) - 0.5f) * 2f * yRange;
+        return new Vector3(x, y, 0f) * (Mathf.Max(0f, intensity) / 6f);
+    }
+
+    private static float Hash01(float value)
+    {
+        return Mathf.Repeat(Mathf.Sin(value * 12.9898f) * 43758.5453f, 1f);
     }
 
     private void CaptureArrowCmdPosition()
@@ -915,11 +1013,17 @@ public class CookingMiniGameController : MonoBehaviour
         originalArrowCmdAnchoredPosition = arrowCmdRect.anchoredPosition;
     }
 
-    private void ResetArrowCmdShake()
+    private void ResetArrowCmdCharacterShake()
     {
         if (arrowCmdRect != null && hasCapturedArrowCmdPosition)
         {
             arrowCmdRect.anchoredPosition = originalArrowCmdAnchoredPosition;
+        }
+
+        if (arrowCmdMeshWasShaken && arrowCmdText != null)
+        {
+            arrowCmdText.ForceMeshUpdate();
+            arrowCmdMeshWasShaken = false;
         }
     }
 

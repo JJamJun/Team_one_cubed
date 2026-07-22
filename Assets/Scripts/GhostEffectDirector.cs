@@ -57,6 +57,10 @@ public class GhostEffectDirector : MonoBehaviour
         if (debuffManager != null)
         {
             debuffManager.ToggleGhostDebuffs(ghostType, false);
+            if (isHappy)
+            {
+                debuffManager.ToggleGhostBuffs(ghostType, true);
+            }
         }
 
         if (vignetteImage != null)

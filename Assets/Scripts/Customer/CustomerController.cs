@@ -55,6 +55,8 @@ public class CustomerController : MonoBehaviour
     private Sequence bobbingSequence;
     private ICustomerVisuals visuals;
     private float currentFootstepVolume = 1f;
+    private bool hasPendingDrinkResult;
+    private bool pendingDrinkSucceeded;
 
     public CustomerState CurrentState => currentState;
     public GhostType CustomerGhostType => ghostType;
@@ -89,9 +91,17 @@ public class CustomerController : MonoBehaviour
         if (spawnLocation != null) rectTransform.anchoredPosition = spawnLocation.anchoredPosition;
 
         IsHappy = false;
+        hasPendingDrinkResult = false;
+        pendingDrinkSucceeded = false;
         currentFootstepVolume = 1f;
         visuals?.SetNeutral();
         currentPatience = maxPatience;
+
+        if (SoundManager.Instance != null && SoundManager.Instance.SFX != null)
+        {
+            SoundManager.Instance.SFX.PlayBell();
+        }
+
         ChangeState(CustomerState.Arriving);
     }
 
@@ -123,6 +133,11 @@ public class CustomerController : MonoBehaviour
             IsHappy = true;
             ChangeState(CustomerState.Completed);
         }
+        else if (currentState == CustomerState.MovingToPickup)
+        {
+            hasPendingDrinkResult = true;
+            pendingDrinkSucceeded = true;
+        }
     }
 
     public void OrderFailed()
@@ -131,6 +146,11 @@ public class CustomerController : MonoBehaviour
         {
             IsHappy = false;
             ChangeState(CustomerState.Angry);
+        }
+        else if (currentState == CustomerState.MovingToPickup)
+        {
+            hasPendingDrinkResult = true;
+            pendingDrinkSucceeded = false;
         }
     }
 
@@ -155,10 +175,6 @@ public class CustomerController : MonoBehaviour
                 if (counterLocation != null) rectTransform.anchoredPosition = counterLocation.anchoredPosition;
                 if (speechBubble != null) speechBubble.SetActive(true);
 
-                if (SoundManager.Instance != null && SoundManager.Instance.SFX != null)
-                {
-                    SoundManager.Instance.SFX.PlayBell();
-                }
                 break;
 
             case CustomerState.MovingToPickup:
@@ -174,9 +190,17 @@ public class CustomerController : MonoBehaviour
                 break;
 
             case CustomerState.WaitingForDrink:
-                //set visible to false
-                visuals?.SetVisible(false);
                 StopBobbing();
+                if (hasPendingDrinkResult)
+                {
+                    bool succeeded = pendingDrinkSucceeded;
+                    hasPendingDrinkResult = false;
+                    pendingDrinkSucceeded = false;
+                    ChangeState(succeeded ? CustomerState.Completed : CustomerState.Angry);
+                    break;
+                }
+
+                visuals?.SetVisible(false);
                 break;
 
             case CustomerState.Completed:
@@ -196,6 +220,8 @@ public class CustomerController : MonoBehaviour
                 StopBobbing();
                 if (speechBubble != null) speechBubble.SetActive(false);
 
+                // Timeout display is intentionally disabled for now.
+                // visuals?.SetVisible(true);
                 visuals?.SetAngry();
                 DOVirtual.DelayedCall(1f, LeaveScreen);
                 break;
