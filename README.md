@@ -34,10 +34,10 @@
 
 ## :fountain_pen: Authors
 
+- PM : 전준황
 - 기획 : 기상호, 박현준
 - 프로그래밍 : 전준황, 김태희
 - 아트 : 김범근
-- 외부 :
 
 ## :books: Documentation
 
