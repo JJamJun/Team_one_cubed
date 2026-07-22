@@ -275,7 +275,7 @@ RectTransform:
   m_AnchorMin: {x: 0, y: 0.5}
   m_AnchorMax: {x: 0, y: 0.5}
   m_AnchoredPosition: {x: 0, y: 0}
-  m_SizeDelta: {x: 0, y: 320}
+  m_SizeDelta: {x: 0, y: 760}
   m_Pivot: {x: 0, y: 0.5}
 --- !u!114 &344306336
 MonoBehaviour:
@@ -304,15 +304,15 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.GridLayoutGroup
   m_Padding:
-    m_Left: 24
-    m_Right: 24
-    m_Top: 18
-    m_Bottom: 18
+    m_Left: 80
+    m_Right: 80
+    m_Top: 70
+    m_Bottom: 70
   m_ChildAlignment: 3
   m_StartCorner: 0
   m_StartAxis: 0
-  m_CellSize: {x: 210, y: 310}
-  m_Spacing: {x: 24, y: 20}
+  m_CellSize: {x: 420, y: 620}
+  m_Spacing: {x: 95, y: 55}
   m_Constraint: 2
   m_ConstraintCount: 1
 --- !u!1 &346087748
@@ -1403,7 +1403,7 @@ MonoBehaviour:
   unlockSaveFileName: menu_progress.json
   walletSaveFileName: player_wallet.json
   contentRoot: {fileID: 344306335}
-  upgradeButtonPrefab: {fileID: 7329797152903308257, guid: 5d69d4a4de4e47338c272fa8a3ca153e, type: 3}
+  upgradeButtonPrefab: {fileID: 8320815969821102544, guid: 7526a5ca5bf22d14e9ffc3bc687cf2f8, type: 3}
   menuSprites:
   - {fileID: 4405641808140667554, guid: 737bff79434e3e145bd94d4d003b95e9, type: 3}
   - {fileID: 2682387113693338678, guid: 644eea7b81be3ad4eadbd367c4ce7507, type: 3}
@@ -1418,7 +1418,7 @@ MonoBehaviour:
   revealedButtonFadeInDuration: 0.6
   resourceIconTextGap: 8
   maxDisplayedAmount: 999999
-  buttonSpacing: 24
+  buttonSpacing: 95
   generatedButtonPrefix: UpgradeButton_
   debugCoinButtonName: "\uB514\uBC84\uADF8_coin_999"
   debugSoulButtonName: "\uB514\uBC84\uADF8_soul_999"

@@ -47,6 +47,7 @@ public class BuffDebuffManager : MonoBehaviour
     public static bool GrimReaperDebuffActive => Instance != null && Instance.grimReaperDebuffActive;
     public static bool DokkaebiBuffActive => Instance != null && Instance.dokkaebiBuffActive;
     public static bool DokkaebiDebuffActive => Instance != null && Instance.dokkaebiDebuffActive;
+    public static bool LittleGhostBuffActive => Instance != null && Instance.littleGhostBuffActive;
     public static bool LittleGhostDebuffActive => Instance != null && Instance.littleGhostDebuffActive;
 
     public static float ShakeAmplitude => Instance != null ? Instance.shakeAmplitude : 0f;
@@ -89,4 +90,47 @@ public class BuffDebuffManager : MonoBehaviour
         float remainRatio = 1f - Mathf.Clamp01(Instance.unlockCostDiscountRatio);
         return Mathf.Max(0, Mathf.RoundToInt(cost * remainRatio));
     }
+    public void ToggleGhostDebuffs(GhostType type, bool isActive)
+    {
+        switch (type)
+        {
+            case GhostType.Woman:
+                virginGhostDebuffActive = isActive;
+                break;
+            case GhostType.DeadLion:
+                grimReaperDebuffActive = isActive;
+                break;
+            case GhostType.Dokaebi:
+                dokkaebiDebuffActive = isActive;
+                break;
+            case GhostType.Little:
+                littleGhostDebuffActive = isActive;
+                break;
+        }
+
+        Debug.Log($"BuffDebuffManager: {type} debuff set to {isActive}");
+    }
+
+    public void ToggleGhostBuffs(GhostType type, bool isActive)
+    {
+        switch (type)
+        {
+            case GhostType.Woman:
+                virginGhostBuffActive = isActive;
+                Debug.Log($"Virgin ghost buff feedback: command length ratio {(Mathf.Clamp01(commandInputReductionRatio) * 100f):0.#}%.");
+                break;
+            case GhostType.DeadLion:
+                grimReaperBuffActive = isActive;
+                break;
+            case GhostType.Dokaebi:
+                dokkaebiBuffActive = isActive;
+                break;
+            case GhostType.Little:
+                littleGhostBuffActive = isActive;
+                break;
+        }
+
+        Debug.Log($"BuffDebuffManager: {type} buff set to {isActive}");
+    }
 }
+

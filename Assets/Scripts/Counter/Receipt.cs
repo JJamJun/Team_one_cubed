@@ -7,7 +7,7 @@ using UnityEngine.UI;
 
 public class Receipt : MonoBehaviour
 {
-    public static event Action<int> ReceiptSlotEmptied;
+    public static event Action<int, bool, string> ReceiptSlotEmptied;
 
     [SerializeField] private TMP_Text orderNameText;
     [SerializeField] private string receiptText;
@@ -16,6 +16,7 @@ public class Receipt : MonoBehaviour
     [SerializeField] private RecepitTimerManager timerManager;
 
     private readonly List<ReceiptLine> orderLines = new List<ReceiptLine>();
+    private string originalReceiptText;
     private float timerRemaining;
     private float timerMaxDuration;
     private bool timerRunning;
@@ -58,7 +59,7 @@ public class Receipt : MonoBehaviour
         }
 
         Debug.Log($"\uC601\uC218\uC99D {GetDisplaySlotIndex()}\uBC88\uC9F8: \uC2DC\uAC04 \uCD08\uACFC!");
-        ClearReceiptSlot();
+        ClearReceiptSlot(false);
     }
 
     private void LateUpdate()
@@ -76,6 +77,7 @@ public class Receipt : MonoBehaviour
         AutoBindText();
         this.slotIndex = slotIndex;
         this.receiptText = receiptText;
+        originalReceiptText = receiptText;
         ParseReceiptText(receiptText);
         RefreshText();
         StartTimer();
@@ -124,7 +126,7 @@ public class Receipt : MonoBehaviour
             if (orderLines.Count == 0)
             {
                 Debug.Log($"\uC601\uC218\uC99D {GetDisplaySlotIndex()}\uBC88\uC9F8: \uC8FC\uBB38 \uC644\uC218!");
-                ClearReceiptSlot();
+                ClearReceiptSlot(true);
             }
 
             return true;
@@ -207,7 +209,7 @@ public class Receipt : MonoBehaviour
         return builder.ToString();
     }
 
-    private void ClearReceiptSlot()
+    private void ClearReceiptSlot(bool success)
     {
         timerRunning = false;
         UpdateTimerVisual(0f);
@@ -217,9 +219,27 @@ public class Receipt : MonoBehaviour
             receiptImage.color = originalReceiptColor;
         }
 
-        ReceiptSlotEmptied?.Invoke(slotIndex);
+        PlayReceiptResultSfx(success);
+        ReceiptSlotEmptied?.Invoke(slotIndex, success, originalReceiptText);
         Debug.Log($"{nameof(Receipt)} slot emptied: {slotIndex}");
         gameObject.SetActive(false);
+    }
+
+    private void PlayReceiptResultSfx(bool success)
+    {
+        if (SoundManager.Instance == null || SoundManager.Instance.SFX == null)
+        {
+            return;
+        }
+
+        if (success)
+        {
+            SoundManager.Instance.SFX.PlayMoney();
+        }
+        else
+        {
+            SoundManager.Instance.SFX.PlayFail();
+        }
     }
 
     private void AutoBindText()
