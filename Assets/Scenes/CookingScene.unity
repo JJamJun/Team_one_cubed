@@ -812,7 +812,7 @@ MonoBehaviour:
   shotWaterCupSprite: {fileID: 2143861055002758193, guid: 322794e2db583e94b9e3960f9c464d15, type: 3}
   shotWaterIceCupSprite: {fileID: -2011141448254006113, guid: ef7e294b2f59885499a4b63ef70b8aec, type: 3}
   failedCupSprite: {fileID: 6888848917883859524, guid: 3367724cb3ea32948b019455e5a3f613, type: 3}
-  lockedCupSprite: {fileID: -2983834402843750381, guid: db54509715e47d640a82836d15ba6f61, type: 3}
+  lockedCupSprite: {fileID: -4106116834555081732, guid: 65a68bc6c53b8db4abf22e815a616917, type: 3}
   successObject: {fileID: 900498306}
   cookingResultState: 0
   completedMenuName: 
@@ -8841,7 +8841,7 @@ MonoBehaviour:
   dokkaebiDebuffActive: 0
   dokkaebiShieldTextColor: {r: 1, g: 0.86, b: 0.08, a: 1}
   littleGhostBuffActive: 0
-  littleGhostDebuffActive: 0
+  littleGhostDebuffActive: 1
   unlockCostDiscountRatio: 0.2
 --- !u!1 &1762016718
 GameObject:
