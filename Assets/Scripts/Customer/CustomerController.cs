@@ -57,6 +57,11 @@ public class CustomerController : MonoBehaviour
     [SerializeField] private string[] lastSeparators = { "이랑 " };
     [SerializeField] private string[] sentenceClosers = { " 주세요." };
 
+    [Header("Force Order Override Settings")]
+    [SerializeField] private bool forceCustomOrder = false;
+    [SerializeField, TextArea(2, 4)] private string forcedOrderText = "아메리카노 1잔";
+    [SerializeField, TextArea(2, 4)] private string forcedSpeechBubbleMessage = "씁쓸한게 땡기네요";
+
     private CustomerState currentState;
     private float currentPatience;
     private Tween movementTween;
@@ -94,13 +99,53 @@ public class CustomerController : MonoBehaviour
 
     public void SetOrderText(string rawOrderText, int totalDrinks)
     {
-        currentOrderText = rawOrderText;
-        TotalDrinksOrdered = totalDrinks;
+        if (forceCustomOrder)
+        {
+            // Override both backend recipe tracking and frontend display text with custom values
+            currentOrderText = forcedOrderText;
+            TotalDrinksOrdered = CountTotalDrinksFromOrder(forcedOrderText);
+        }
+        else
+        {
+            currentOrderText = rawOrderText;
+            TotalDrinksOrdered = totalDrinks;
+        }
 
         if (orderTextLabel != null)
         {
-            orderTextLabel.text = FormatOrderString(rawOrderText);
+            if (forceCustomOrder)
+            {
+                orderTextLabel.text = forcedSpeechBubbleMessage;
+            }
+            else
+            {
+                orderTextLabel.text = FormatOrderString(rawOrderText);
+            }
         }
+    }
+
+    // Helper to calculate total drink count dynamically from a forced multi-line order string (e.g., "아메리카노 1잔\n카페라떼 2잔")
+    private int CountTotalDrinksFromOrder(string orderText)
+    {
+        string[] lines = orderText.Split(new char[] { '\n', '\r' }, StringSplitOptions.RemoveEmptyEntries);
+        int total = 0;
+
+        foreach (var line in lines)
+        {
+            int lastSpace = line.LastIndexOf(' ');
+            if (lastSpace >= 0 && lastSpace + 1 < line.Length)
+            {
+                string countPart = line.Substring(lastSpace + 1).Replace("잔", "").Trim();
+                if (int.TryParse(countPart, out int count))
+                {
+                    total += count;
+                    continue;
+                }
+            }
+            total += 1; // Fallback default if parsing fails
+        }
+
+        return Mathf.Max(1, total);
     }
 
     // Extracted the formatting logic so we can test it without UI references
@@ -110,8 +155,7 @@ public class CustomerController : MonoBehaviour
 
         if (orderItems.Length == 0) return "";
 
-        // 1. Determine which pattern index to use
-        int patternCount = sentenceStarters.Length; // We base the count on the starters array
+        int patternCount = sentenceStarters.Length;
         int chosenIndex = 0;
 
         if (patternCount > 1)
@@ -119,13 +163,11 @@ public class CustomerController : MonoBehaviour
             chosenIndex = UnityEngine.Random.Range(0, patternCount);
         }
 
-        // 2. Safely grab the matching string components for this index
         string starter = GetSafeString(sentenceStarters, chosenIndex);
         string sep = GetSafeString(separators, chosenIndex);
         string lastSep = GetSafeString(lastSeparators, chosenIndex);
         string closer = GetSafeString(sentenceClosers, chosenIndex);
 
-        // 3. Build the sentence
         System.Text.StringBuilder formattedOrder = new System.Text.StringBuilder();
         formattedOrder.Append(starter);
 
@@ -150,11 +192,10 @@ public class CustomerController : MonoBehaviour
         return formattedOrder.ToString();
     }
 
-    // Helper to prevent out-of-bounds errors if the user forgot to match array lengths in the Inspector
     private string GetSafeString(string[] array, int index)
     {
         if (array == null || array.Length == 0) return "";
-        if (index >= array.Length) return array[array.Length - 1]; // Fallback to the last available string
+        if (index >= array.Length) return array[array.Length - 1];
         return array[index];
     }
 
@@ -257,7 +298,6 @@ public class CustomerController : MonoBehaviour
                 StopBobbing();
                 if (counterLocation != null) rectTransform.anchoredPosition = counterLocation.anchoredPosition;
 
-                // Show speech bubble with the formatted text
                 if (speechBubble != null) speechBubble.SetActive(true);
 
                 break;
@@ -395,8 +435,6 @@ public class CustomerController : MonoBehaviour
         bobbingSequence?.Kill();
     }
 
-
-    //DEBUG FUNCTION
     [ContextMenu("Test Order Formatting")]
     private void TestOrderFormatting()
     {

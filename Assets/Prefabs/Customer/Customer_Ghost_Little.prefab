@@ -66,11 +66,22 @@ MonoBehaviour:
   bobbingSpeed: 0.2
   maxPatience: 15
   successDialogues:
-  - "\uACE0\uB9C8\uC6CC! \uB108\uB124 \uAC00\uAC8C \uC798\uD55C\uB2F9!"
-  - "\uC608\uC804 \uB2E8\uACE8\uC9D1\uC774 \uC0AC\uB77C\uC838\uC11C \uC2AC\uD508\uB370"
-  - "\uC88B\uC740 \uD558\uB8E8 \uB418\uC138\uC694~!"
+  - "\uB4DC\uB514\uC5B4 \uC870\uAE08 \uC0B4\uAC70 \uAC19\uB124~"
+  - "\uD718\uC720~! \uC9DC\uB9BF\uD574~! "
   typeSpeed: 0.05
   readDelayAfterTyping: 1
+  sentenceStarters:
+  - 
+  separators:
+  - ', '
+  lastSeparators:
+  - "\uC774\uB791 "
+  sentenceClosers:
+  - " \uC8FC\uC138\uC694."
+  forceCustomOrder: 1
+  forcedOrderText: "\uC544\uC774\uC2A4 \uC544\uBA54\uB9AC\uCE74\uB178 1\uC794"
+  forcedSpeechBubbleMessage: "\uC624\uB298\uB3C4 \uC57C\uADFC\uC774\uC57C~ \uC81C\uC77C
+    \uC4F4 \uAC78\uB85C \uC918~"
 --- !u!114 &6440574990424238344
 MonoBehaviour:
   m_ObjectHideFlags: 0
