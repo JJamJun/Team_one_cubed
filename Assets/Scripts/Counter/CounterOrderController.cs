@@ -66,6 +66,7 @@ public class CounterOrderController : MonoBehaviour
         }
 
         ResetReceiptState();
+        UpdatePrintZoneText();
         if (hideReceiptSlotsOnAwake)
         {
             HideAllReceiptSlots();
@@ -98,6 +99,7 @@ public class CounterOrderController : MonoBehaviour
 
         pendingClicks.Add(menuName);
         Debug.Log($"{nameof(CounterOrderController)} pending clicks: [{string.Join(", ", pendingClicks)}]");
+        UpdatePrintZoneText();
 
         if (orderSubmitted)
         {
@@ -154,6 +156,7 @@ public class CounterOrderController : MonoBehaviour
 
         ResetReceiptState();
         UpdateOrderText();
+        UpdatePrintZoneText();
         Debug.Log($"{nameof(CounterOrderController)} canceled order.");
     }
 
@@ -173,11 +176,22 @@ public class CounterOrderController : MonoBehaviour
     private void BuildSubmittedOrder()
     {
         submittedOrderLines.Clear();
+        submittedOrderLines.AddRange(BuildOrderLines(pendingClicks));
+    }
+
+    private List<OrderLine> BuildOrderLines(IReadOnlyList<string> sourceMenuNames)
+    {
+        List<OrderLine> orderLines = new List<OrderLine>();
+        if (sourceMenuNames == null)
+        {
+            return orderLines;
+        }
+
         Dictionary<string, OrderLine> lineByName = new Dictionary<string, OrderLine>();
 
-        for (int i = 0; i < pendingClicks.Count; i++)
+        for (int i = 0; i < sourceMenuNames.Count; i++)
         {
-            string menuName = pendingClicks[i];
+            string menuName = sourceMenuNames[i];
             if (lineByName.TryGetValue(menuName, out OrderLine line))
             {
                 line.Count++;
@@ -186,8 +200,10 @@ public class CounterOrderController : MonoBehaviour
 
             line = new OrderLine(menuName, 1);
             lineByName.Add(menuName, line);
-            submittedOrderLines.Add(line);
+            orderLines.Add(line);
         }
+
+        return orderLines;
     }
 
     private void UpdateOrderText()
@@ -269,21 +285,26 @@ public class CounterOrderController : MonoBehaviour
 
     private string CreateOrderText()
     {
-        if (!HasSubmittedOrderLines())
+        return CreateOrderText(submittedOrderLines);
+    }
+
+    private string CreateOrderText(IReadOnlyList<OrderLine> orderLines)
+    {
+        if (orderLines == null || orderLines.Count == 0)
         {
             return "\uC785\uB825\uB41C \uBA54\uB274\uAC00 \uC5C6\uC2B5\uB2C8\uB2E4!";
         }
 
         StringBuilder builder = new StringBuilder();
-        for (int i = 0; i < submittedOrderLines.Count; i++)
+        for (int i = 0; i < orderLines.Count; i++)
         {
-            OrderLine line = submittedOrderLines[i];
+            OrderLine line = orderLines[i];
             builder.Append(line.MenuName);
             builder.Append(' ');
             builder.Append(line.Count);
             builder.Append("\uC794");
 
-            if (i + 1 < submittedOrderLines.Count)
+            if (i + 1 < orderLines.Count)
             {
                 builder.AppendLine();
             }
@@ -793,6 +814,7 @@ public class CounterOrderController : MonoBehaviour
 
         ResetReceiptState();
         UpdateOrderText();
+        UpdatePrintZoneText();
     }
 
     private void HideAllReceiptSlots()
