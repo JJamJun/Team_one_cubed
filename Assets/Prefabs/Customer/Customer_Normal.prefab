@@ -774,6 +774,18 @@ MonoBehaviour:
   - "\uC88B\uC740 \uD558\uB8E8 \uB418\uC138\uC694~!"
   typeSpeed: 0.05
   readDelayAfterTyping: 1
+  sentenceStarters:
+  - 
+  - "\uC800\uAE30, "
+  separators:
+  - ', '
+  - ', '
+  lastSeparators:
+  - "\uC774\uB791 "
+  - "\uD558\uACE0... "
+  sentenceClosers:
+  - " \uC8FC\uC138\uC694."
+  - " \uAC00\uB2A5\uD560\uAE4C\uC694?"
 --- !u!114 &6174540304473105637
 MonoBehaviour:
   m_ObjectHideFlags: 0

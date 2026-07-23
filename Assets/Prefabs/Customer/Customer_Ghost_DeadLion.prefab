@@ -63,7 +63,20 @@ MonoBehaviour:
   arrivalDuration: 1.5
   moveDuration: 1
   bobbingAmplitude: 20
+  bobbingSpeed: 0.2
   maxPatience: 15
+  successDialogues:
+  - "\uACE0\uB9D9\uC18C. "
+  typeSpeed: 0.05
+  readDelayAfterTyping: 1
+  sentenceStarters:
+  - "\uC74C. "
+  separators:
+  - ', '
+  lastSeparators:
+  - "\uD558\uACE0 "
+  sentenceClosers:
+  - " \uC5BB\uC5B4 \uB9C8\uC2DC\uACE0 \uC2F6\uAD6C\uB824."
 --- !u!114 &6920053704646893013
 MonoBehaviour:
   m_ObjectHideFlags: 0

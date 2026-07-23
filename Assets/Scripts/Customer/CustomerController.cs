@@ -45,9 +45,15 @@ public class CustomerController : MonoBehaviour
     [SerializeField] private float maxPatience = 15f;
 
     [Header("Dialogue Settings")]
-    [SerializeField] private string[] successDialogues = { "감사합니다!","감사합니다~","좋은 하루 되세요~!" }; //default for generic
+    [SerializeField] private string[] successDialogues = { "감사합니다!", "감사합니다~", "좋은 하루 되세요~!" };
     [SerializeField] private float typeSpeed = 0.05f;
     [SerializeField] private float readDelayAfterTyping = 1.0f;
+
+    [Header("Order Dialogue Formats (Keep array lengths matched!)")]
+    [SerializeField] private string[] sentenceStarters = { "" };
+    [SerializeField] private string[] separators = { ", " };
+    [SerializeField] private string[] lastSeparators = { "이랑 " };
+    [SerializeField] private string[] sentenceClosers = { " 주세요." };
 
     private CustomerState currentState;
     private float currentPatience;
@@ -80,10 +86,69 @@ public class CustomerController : MonoBehaviour
         exitLocation = exit;
     }
 
-    public void SetOrderText(string text, int totalDrinks)
+    public void SetOrderText(string rawOrderText, int totalDrinks)
     {
-        if (orderTextLabel != null) orderTextLabel.text = text;
         TotalDrinksOrdered = totalDrinks;
+
+        if (orderTextLabel != null)
+        {
+            orderTextLabel.text = FormatOrderString(rawOrderText);
+        }
+    }
+
+    // Extracted the formatting logic so we can test it without UI references
+    private string FormatOrderString(string rawOrderText)
+    {
+        string[] orderItems = rawOrderText.Split(new char[] { '\n', '\r' }, StringSplitOptions.RemoveEmptyEntries);
+
+        if (orderItems.Length == 0) return "";
+
+        // 1. Determine which pattern index to use
+        int patternCount = sentenceStarters.Length; // We base the count on the starters array
+        int chosenIndex = 0;
+
+        if (patternCount > 1)
+        {
+            chosenIndex = UnityEngine.Random.Range(0, patternCount);
+        }
+
+        // 2. Safely grab the matching string components for this index
+        string starter = GetSafeString(sentenceStarters, chosenIndex);
+        string sep = GetSafeString(separators, chosenIndex);
+        string lastSep = GetSafeString(lastSeparators, chosenIndex);
+        string closer = GetSafeString(sentenceClosers, chosenIndex);
+
+        // 3. Build the sentence
+        System.Text.StringBuilder formattedOrder = new System.Text.StringBuilder();
+        formattedOrder.Append(starter);
+
+        for (int i = 0; i < orderItems.Length; i++)
+        {
+            formattedOrder.Append(orderItems[i]);
+
+            if (i < orderItems.Length - 1)
+            {
+                if (i == orderItems.Length - 2)
+                {
+                    formattedOrder.Append(lastSep);
+                }
+                else
+                {
+                    formattedOrder.Append(sep);
+                }
+            }
+        }
+
+        formattedOrder.Append(closer);
+        return formattedOrder.ToString();
+    }
+
+    // Helper to prevent out-of-bounds errors if the user forgot to match array lengths in the Inspector
+    private string GetSafeString(string[] array, int index)
+    {
+        if (array == null || array.Length == 0) return "";
+        if (index >= array.Length) return array[array.Length - 1]; // Fallback to the last available string
+        return array[index];
     }
 
     public void Spawn()
@@ -173,6 +238,8 @@ public class CustomerController : MonoBehaviour
             case CustomerState.Ordering:
                 StopBobbing();
                 if (counterLocation != null) rectTransform.anchoredPosition = counterLocation.anchoredPosition;
+
+                // Show speech bubble with the formatted text
                 if (speechBubble != null) speechBubble.SetActive(true);
 
                 break;
@@ -220,8 +287,6 @@ public class CustomerController : MonoBehaviour
                 StopBobbing();
                 if (speechBubble != null) speechBubble.SetActive(false);
 
-                // Timeout display is intentionally disabled for now.
-                // visuals?.SetVisible(true);
                 visuals?.SetAngry();
                 DOVirtual.DelayedCall(1f, LeaveScreen);
                 break;
@@ -298,5 +363,16 @@ public class CustomerController : MonoBehaviour
     private void StopBobbing()
     {
         bobbingSequence?.Kill();
+    }
+
+
+    //DEBUG FUNCTION
+    [ContextMenu("Test Order Formatting")]
+    private void TestOrderFormatting()
+    {
+        string dummyOrder = "<음료1> 1잔\n<음료2> 2잔\n<음료3> 3잔";
+        string result = FormatOrderString(dummyOrder);
+
+        Debug.Log($"<b>[{gameObject.name} - {ghostType}]</b> Test Result:\n<color=yellow>{result}</color>");
     }
 }
