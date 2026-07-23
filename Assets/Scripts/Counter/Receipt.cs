@@ -5,9 +5,15 @@ using System.Text;
 using UnityEngine;
 using UnityEngine.UI;
 
+public enum ReceiptFailureReason
+{
+    None,
+    Timeout
+}
+
 public class Receipt : MonoBehaviour
 {
-    public static event Action<int, bool, string, bool> ReceiptSlotEmptied;
+    public static event Action<int, bool, string, bool, ReceiptFailureReason> ReceiptSlotEmptied;
     public static event Action ReceiptTimedOut;
     public static event Action FailedDrinkSubmitted;
 
@@ -68,7 +74,7 @@ public class Receipt : MonoBehaviour
 
         Debug.Log($"\uC601\uC218\uC99D {GetDisplaySlotIndex()}\uBC88\uC9F8: \uC2DC\uAC04 \uCD08\uACFC!");
         ReceiptTimedOut?.Invoke();
-        ClearReceiptSlot(false);
+        ClearReceiptSlot(false, false, ReceiptFailureReason.Timeout);
     }
 
     private void LateUpdate()
@@ -222,10 +228,15 @@ public class Receipt : MonoBehaviour
 
     private void ClearReceiptSlot(bool success)
     {
-        ClearReceiptSlot(success, false);
+        ClearReceiptSlot(success, false, ReceiptFailureReason.None);
     }
 
     private void ClearReceiptSlot(bool success, bool completedWithinHalfTime)
+    {
+        ClearReceiptSlot(success, completedWithinHalfTime, ReceiptFailureReason.None);
+    }
+
+    private void ClearReceiptSlot(bool success, bool completedWithinHalfTime, ReceiptFailureReason failureReason)
     {
         timerRunning = false;
         UpdateTimerVisual(0f);
@@ -236,7 +247,7 @@ public class Receipt : MonoBehaviour
         }
 
         PlayReceiptResultSfx(success);
-        ReceiptSlotEmptied?.Invoke(slotIndex, success, originalReceiptText, completedWithinHalfTime);
+        ReceiptSlotEmptied?.Invoke(slotIndex, success, originalReceiptText, completedWithinHalfTime, failureReason);
         Debug.Log($"{nameof(Receipt)} slot emptied: {slotIndex}");
         gameObject.SetActive(false);
     }

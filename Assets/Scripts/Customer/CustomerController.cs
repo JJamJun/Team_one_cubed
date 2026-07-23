@@ -16,6 +16,14 @@ public enum CustomerState
     Arriving, Ordering, MovingToPickup, WaitingForDrink, Completed, Angry, Leaving
 }
 
+public enum CustomerAngryReason
+{
+    None,
+    CounterPatienceExpired,
+    WrongOrder,
+    ReceiptTimeout
+}
+
 public class CustomerController : MonoBehaviour
 {
     public event Action<CustomerController> OnCustomerLeft;
@@ -66,7 +74,9 @@ public class CustomerController : MonoBehaviour
     private bool hasPendingDrinkResult;
     private bool pendingDrinkSucceeded;
     private bool pendingDrinkShouldTriggerAngryEvent;
+    private CustomerAngryReason pendingDrinkAngryReason = CustomerAngryReason.None;
     private bool shouldTriggerAngryEvent = true;
+    private CustomerAngryReason currentAngryReason = CustomerAngryReason.None;
     private string currentOrderText = string.Empty;
 
     public CustomerState CurrentState => currentState;
@@ -166,7 +176,9 @@ public class CustomerController : MonoBehaviour
         hasPendingDrinkResult = false;
         pendingDrinkSucceeded = false;
         pendingDrinkShouldTriggerAngryEvent = false;
+        pendingDrinkAngryReason = CustomerAngryReason.None;
         shouldTriggerAngryEvent = true;
+        currentAngryReason = CustomerAngryReason.None;
         currentFootstepVolume = 1f;
         visuals?.SetNeutral();
         currentPatience = maxPatience;
@@ -197,6 +209,7 @@ public class CustomerController : MonoBehaviour
         {
             CustomerPatienceExpired?.Invoke();
             shouldTriggerAngryEvent = true;
+            currentAngryReason = CustomerAngryReason.CounterPatienceExpired;
             ChangeState(CustomerState.Angry);
         }
     }
@@ -223,17 +236,26 @@ public class CustomerController : MonoBehaviour
 
     public void OrderFailed()
     {
+        bool triggerAngryEvent = currentState == CustomerState.Ordering;
+        CustomerAngryReason reason = triggerAngryEvent ? CustomerAngryReason.WrongOrder : CustomerAngryReason.None;
+        OrderFailed(reason, triggerAngryEvent);
+    }
+
+    public void OrderFailed(CustomerAngryReason angryReason, bool triggerAngryEvent)
+    {
         if (currentState == CustomerState.Ordering || currentState == CustomerState.WaitingForDrink)
         {
             IsHappy = false;
-            shouldTriggerAngryEvent = currentState == CustomerState.Ordering;
+            shouldTriggerAngryEvent = triggerAngryEvent;
+            currentAngryReason = angryReason;
             ChangeState(CustomerState.Angry);
         }
         else if (currentState == CustomerState.MovingToPickup)
         {
             hasPendingDrinkResult = true;
             pendingDrinkSucceeded = false;
-            pendingDrinkShouldTriggerAngryEvent = false;
+            pendingDrinkShouldTriggerAngryEvent = triggerAngryEvent;
+            pendingDrinkAngryReason = angryReason;
         }
     }
 
@@ -280,10 +302,13 @@ public class CustomerController : MonoBehaviour
                 {
                     bool succeeded = pendingDrinkSucceeded;
                     bool pendingTriggerAngryEvent = pendingDrinkShouldTriggerAngryEvent;
+                    CustomerAngryReason pendingReason = pendingDrinkAngryReason;
                     hasPendingDrinkResult = false;
                     pendingDrinkSucceeded = false;
                     pendingDrinkShouldTriggerAngryEvent = false;
+                    pendingDrinkAngryReason = CustomerAngryReason.None;
                     shouldTriggerAngryEvent = succeeded || pendingTriggerAngryEvent;
+                    currentAngryReason = succeeded ? CustomerAngryReason.None : pendingReason;
                     ChangeState(succeeded ? CustomerState.Completed : CustomerState.Angry);
                     break;
                 }
@@ -311,9 +336,13 @@ public class CustomerController : MonoBehaviour
                 visuals?.SetAngry();
                 bool triggerAngryEvent = shouldTriggerAngryEvent;
                 shouldTriggerAngryEvent = true;
+                CustomerAngryReason angryReason = currentAngryReason;
+                currentAngryReason = CustomerAngryReason.None;
                 bool waitsForAngryEvent = triggerAngryEvent
                     && AngryManager.Instance != null
                     && AngryManager.Instance.TryTriggerAngryEvent(LeaveScreen);
+
+                ApplyAngryReputationChange(angryReason, waitsForAngryEvent);
 
                 if (!waitsForAngryEvent)
                 {
@@ -340,6 +369,33 @@ public class CustomerController : MonoBehaviour
     private void LeaveScreen()
     {
         ChangeState(CustomerState.Leaving);
+    }
+
+    private void ApplyAngryReputationChange(CustomerAngryReason angryReason, bool angryEventPlayed)
+    {
+        if (ReputationRatingManager.Instance == null)
+        {
+            return;
+        }
+
+        if (angryEventPlayed)
+        {
+            ReputationRatingManager.Instance.RegisterCustomerAngryEvent();
+            return;
+        }
+
+        switch (angryReason)
+        {
+            case CustomerAngryReason.CounterPatienceExpired:
+                ReputationRatingManager.Instance.RegisterCounterPatienceExpired();
+                break;
+            case CustomerAngryReason.ReceiptTimeout:
+                ReputationRatingManager.Instance.RegisterReceiptLost();
+                break;
+            case CustomerAngryReason.WrongOrder:
+                ReputationRatingManager.Instance.RegisterWrongOrderSubmitted();
+                break;
+        }
     }
 
     private IEnumerator TypeDialogue(string message)

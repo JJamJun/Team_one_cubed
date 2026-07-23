@@ -11,9 +11,9 @@ public class AngryManager : MonoBehaviour
 
     [Header("몬스터화 기믹 확률")]
     [SerializeField, InspectorName("0점대"), Range(0f, 1f)] private float monsterChanceRating0 = 1f;
-    [SerializeField, InspectorName("1점대"), Range(0f, 1f)] private float monsterChanceRating1 = 0.8f;
-    [SerializeField, InspectorName("2점대"), Range(0f, 1f)] private float monsterChanceRating2 = 0.6f;
-    [SerializeField, InspectorName("3점대"), Range(0f, 1f)] private float monsterChanceRating3 = 0.4f;
+    [SerializeField, InspectorName("1점대"), Range(0f, 1f)] private float monsterChanceRating1 = 0.9f;
+    [SerializeField, InspectorName("2점대"), Range(0f, 1f)] private float monsterChanceRating2 = 0.5f;
+    [SerializeField, InspectorName("3점대"), Range(0f, 1f)] private float monsterChanceRating3 = 0.3f;
     [SerializeField, InspectorName("4점대"), Range(0f, 1f)] private float monsterChanceRating4 = 0.2f;
     [SerializeField, InspectorName("5점대"), Range(0f, 1f)] private float monsterChanceRating5 = 0f;
 
@@ -146,14 +146,15 @@ public class AngryManager : MonoBehaviour
 
     private float GetMonsterChanceForCurrentRating()
     {
-        float currentRating = ReputationRatingManager.Instance != null
-            ? ReputationRatingManager.Instance.CurrentRating
-            : 0f;
-        int ratingBand = Mathf.Clamp(Mathf.FloorToInt(currentRating), 0, 5);
-        if (currentRating >= 5f)
+        if (ReputationRatingManager.Instance != null && !ReputationRatingManager.Instance.IsRatingUnlocked)
         {
-            ratingBand = 5;
+            return 0f;
         }
+
+        int ratingBand = ReputationRatingManager.Instance != null
+            ? ReputationRatingManager.Instance.CurrentAngryEventBand
+            : 0;
+        ratingBand = Mathf.Clamp(ratingBand, 0, 5);
 
         switch (ratingBand)
         {

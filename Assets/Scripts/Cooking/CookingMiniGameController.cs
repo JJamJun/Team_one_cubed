@@ -39,6 +39,9 @@ public class CookingMiniGameController : MonoBehaviour
     private const char RightArrow = '\u2192';
 
     public static bool IsCookingMiniGameOpen { get; private set; }
+    public static bool WasCookingMiniGameClosedThisFrame => lastClosedFrame == Time.frameCount;
+
+    private static int lastClosedFrame = -1;
 
     [SerializeField] private GameObject cookingSpriteRoot;
     [SerializeField] private TMP_Text arrowCmdText;
@@ -159,8 +162,7 @@ public class CookingMiniGameController : MonoBehaviour
                 commandComplete = true;
                 arrowInputEnabled = false;
                 timerRunning = false;
-                escapeExitEnabled = true;
-                ApplyCookingResult(true);
+                FinishCookingAttempt(true);
                 Debug.Log($"Cooking command complete: {currentMenuName}");
             }
         }
@@ -179,8 +181,7 @@ public class CookingMiniGameController : MonoBehaviour
                     commandComplete = true;
                     arrowInputEnabled = false;
                     timerRunning = false;
-                    escapeExitEnabled = true;
-                    ApplyCookingResult(true);
+                    FinishCookingAttempt(true);
                     Debug.Log($"Cooking command complete with command shield: {currentMenuName}");
                 }
 
@@ -193,8 +194,7 @@ public class CookingMiniGameController : MonoBehaviour
             ResetCookingComboSfx();
             arrowInputEnabled = false;
             timerRunning = false;
-            escapeExitEnabled = true;
-            ApplyCookingResult(false);
+            FinishCookingAttempt(false);
             Debug.Log($"Cooking command failed: {currentMenuName}");
         }
 
@@ -283,7 +283,13 @@ public class CookingMiniGameController : MonoBehaviour
 
     private void HideCookingScreen()
     {
+        bool wasOpen = IsCookingMiniGameOpen;
         IsCookingMiniGameOpen = false;
+        if (wasOpen)
+        {
+            lastClosedFrame = Time.frameCount;
+        }
+
         if (arrowCmdText != null)
         {
             arrowCmdText.text = string.Empty;
@@ -868,6 +874,12 @@ public class CookingMiniGameController : MonoBehaviour
         }
     }
 
+    private void FinishCookingAttempt(bool succeeded)
+    {
+        ApplyCookingResult(succeeded);
+        HideCookingScreen();
+    }
+
     private void InitializeSuccessCount()
     {
         if (debugSuccessCountText == null)
@@ -913,14 +925,13 @@ public class CookingMiniGameController : MonoBehaviour
 
         timerRunning = false;
         arrowInputEnabled = false;
-        escapeExitEnabled = true;
 
         if (!string.IsNullOrEmpty(currentCommand))
         {
             wrongIndex = Mathf.Clamp(inputIndex, 0, currentCommand.Length - 1);
         }
 
-        ApplyCookingResult(false);
+        FinishCookingAttempt(false);
         RenderArrowCommand();
         Debug.Log($"Cooking command timed out: {currentMenuName}");
     }

@@ -30,6 +30,21 @@ public class CustomerManager : MonoBehaviour
     [SerializeField] private TextAsset menuInfoCsv;
     [SerializeField] private string unlockSaveFileName = "menu_progress.json";
     [SerializeField, Min(0.1f)] private float unlockSavePollInterval = 0.5f;
+    [Header("Unlock Progression")]
+    [SerializeField] private string defaultMenuId = "0";
+    [SerializeField, Min(0)] private int ratingUnlockCount = 2;
+    [SerializeField, Min(0)] private int mixedOrderUnlockCount = 3;
+    [SerializeField, Min(1)] private int onlyDefaultMaxItems = 1;
+    [SerializeField, Min(1)] private int oneUnlockMaxItems = 2;
+    [SerializeField, Min(1f)] private float onlyDefaultSpawnTime = 10f;
+
+    [Header("Rating Based Ghost Chance")]
+    [SerializeField, Range(0f, 1f)] private float ghostChanceScore0 = 0f;
+    [SerializeField, Range(0f, 1f)] private float ghostChanceRating1 = 0.01f;
+    [SerializeField, Range(0f, 1f)] private float ghostChanceRating2 = 0.05f;
+    [SerializeField, Range(0f, 1f)] private float ghostChanceRating3 = 0.1f;
+    [SerializeField, Range(0f, 1f)] private float ghostChanceRating4 = 0.2f;
+    [SerializeField, Range(0f, 1f)] private float ghostChanceRating5 = 0.25f;
 
     [Header("Dependencies")]
     [SerializeField] private UIStationScoller stationScroller;
@@ -48,6 +63,9 @@ public class CustomerManager : MonoBehaviour
     private string unlockSavePath;
     private DateTime lastUnlockSaveWriteTimeUtc = DateTime.MinValue;
     private float nextUnlockSavePollTime;
+    private int unlockedMenuCountExcludingDefault;
+    private int currentMaxItemsInOrder;
+    private bool mixedOrdersAllowed;
 
     private Dictionary<int, CustomerController> waitingCustomers = new Dictionary<int, CustomerController>();
 
@@ -95,7 +113,7 @@ public class CustomerManager : MonoBehaviour
 
         Debug.Log($"{nameof(CustomerManager)}: submitted order does not match customer order.\nCustomer:\n{currentCustomerAtCounter.OrderText}\nSubmitted:\n{submittedOrderText}");
         WrongOrderSubmitted?.Invoke();
-        currentCustomerAtCounter.OrderFailed();
+        currentCustomerAtCounter.OrderFailed(CustomerAngryReason.WrongOrder, true);
         return string.Empty;
     }
 
@@ -112,7 +130,7 @@ public class CustomerManager : MonoBehaviour
         }
     }
 
-    private void HandleReceiptEmptied(int slotIndex, bool isSuccess, string receiptText, bool completedWithinHalfTime)
+    private void HandleReceiptEmptied(int slotIndex, bool isSuccess, string receiptText, bool completedWithinHalfTime, ReceiptFailureReason failureReason)
     {
         if (waitingCustomers.TryGetValue(slotIndex, out CustomerController customer))
         {
@@ -132,7 +150,11 @@ public class CustomerManager : MonoBehaviour
                 }
                 else
                 {
-                    customer.OrderFailed();
+                    bool shouldTriggerAngryEvent = failureReason == ReceiptFailureReason.Timeout;
+                    CustomerAngryReason angryReason = shouldTriggerAngryEvent
+                        ? CustomerAngryReason.ReceiptTimeout
+                        : CustomerAngryReason.None;
+                    customer.OrderFailed(angryReason, shouldTriggerAngryEvent);
                 }
             }
 
@@ -267,16 +289,10 @@ public class CustomerManager : MonoBehaviour
     private void SpawnCustomer()
     {
         isCounterOccupied = true;
-        bool spawningGhost = false;
+        bool spawningPendingGhost = ShouldSpawnPendingGhost();
+        GameObject prefabToSpawn = spawningPendingGhost ? pendingGhostPrefab : normalCustomerPrefab;
 
-        GameObject prefabToSpawn = normalCustomerPrefab;
-
-        if (ShouldSpawnPendingGhost())
-        {
-            prefabToSpawn = pendingGhostPrefab;
-            spawningGhost = true;
-        }
-        else if (CanStartGhostTrial())
+        if (!spawningPendingGhost && CanStartGhostTrial())
         {
             TryStartGhostTrial();
         }
@@ -289,7 +305,7 @@ public class CustomerManager : MonoBehaviour
             currentCustomerAtCounter.OnCustomerLeft += HandleCustomerLeft;
             GameStatsManager.Instance?.RegisterCustomerArrival();
 
-            if (spawningGhost)
+            if (spawningPendingGhost)
             {
                 activeGhost = currentCustomerAtCounter;
                 pendingGhostPrefab = null;
@@ -324,7 +340,7 @@ public class CustomerManager : MonoBehaviour
             && pendingGhostPrefab == null
             && ghostCustomerPrefabs != null
             && ghostCustomerPrefabs.Length > 0
-            && Random.value <= ghostChance;
+            && Random.value <= GetCurrentGhostChance();
     }
 
     private void TryStartGhostTrial()
@@ -411,28 +427,37 @@ public class CustomerManager : MonoBehaviour
 
     private string GenerateRandomOrder(out int totalDrinkCount)
     {
-        int itemCount = Random.Range(1, maxItemsInOrder + 1);
+        int itemCount = Random.Range(1, GetCurrentMaxItemsInOrder() + 1);
         Dictionary<string, int> orderCounts = new Dictionary<string, int>();
         totalDrinkCount = 0; //track total!!! why bake straight into string bruh :( 
 
-        for (int i = 0; i < itemCount; i++)
+        if (!mixedOrdersAllowed)
         {
             string randomMenu = availableMenus[Random.Range(0, availableMenus.Count)];
-            if (orderCounts.ContainsKey(randomMenu))
+            orderCounts[randomMenu] = itemCount;
+            totalDrinkCount = itemCount;
+        }
+        else
+        {
+            for (int i = 0; i < itemCount; i++)
             {
-                orderCounts[randomMenu]++;
+                string randomMenu = availableMenus[Random.Range(0, availableMenus.Count)];
+                if (orderCounts.ContainsKey(randomMenu))
+                {
+                    orderCounts[randomMenu]++;
+                }
+                else
+                {
+                    orderCounts[randomMenu] = 1;
+                }
+                totalDrinkCount++;
             }
-            else
-            {
-                orderCounts[randomMenu] = 1;
-            }
-            totalDrinkCount++; 
         }
 
         System.Text.StringBuilder orderBuilder = new System.Text.StringBuilder();
         foreach (var kvp in orderCounts)
         {
-            orderBuilder.AppendLine($"{kvp.Key} {kvp.Value}ÀÜ");
+            orderBuilder.AppendLine($"{kvp.Key} {kvp.Value}\uC794");
         }
 
         return orderBuilder.ToString().Trim();
@@ -462,6 +487,12 @@ public class CustomerManager : MonoBehaviour
 
     private void ResetSpawnTimer()
     {
+        if (unlockedMenuCountExcludingDefault <= 0)
+        {
+            spawnTimer = onlyDefaultSpawnTime;
+            return;
+        }
+
         spawnTimer = Random.Range(minSpawnTime, maxSpawnTime);
     }
 
@@ -506,8 +537,78 @@ public class CustomerManager : MonoBehaviour
         lastUnlockSaveWriteTimeUtc = File.Exists(unlockSavePath)
             ? File.GetLastWriteTimeUtc(unlockSavePath)
             : DateTime.MinValue;
+
+        ApplyUnlockProgression(unlockSaveData);
     }
 
+    private void ApplyUnlockProgression(MenuUnlockSaveData unlockSaveData)
+    {
+        unlockedMenuCountExcludingDefault = CountUnlockedMenusExcludingDefault(unlockSaveData);
+        mixedOrdersAllowed = unlockedMenuCountExcludingDefault >= mixedOrderUnlockCount;
+
+        if (unlockedMenuCountExcludingDefault <= 0)
+        {
+            currentMaxItemsInOrder = onlyDefaultMaxItems;
+        }
+        else if (unlockedMenuCountExcludingDefault == 1)
+        {
+            currentMaxItemsInOrder = oneUnlockMaxItems;
+        }
+        else
+        {
+            currentMaxItemsInOrder = maxItemsInOrder;
+        }
+    }
+
+    private int CountUnlockedMenusExcludingDefault(MenuUnlockSaveData unlockSaveData)
+    {
+        int count = 0;
+        unlockSaveData.EnsureInitialized();
+        for (int i = 0; i < unlockSaveData.menus.Count; i++)
+        {
+            MenuUnlockState state = unlockSaveData.menus[i];
+            if (state == null
+                || state.menuID == defaultMenuId
+                || !state.isUnlocked
+                || state.level <= 0)
+            {
+                continue;
+            }
+
+            count++;
+        }
+
+        return count;
+    }
+
+    private int GetCurrentMaxItemsInOrder()
+    {
+        return Mathf.Max(1, currentMaxItemsInOrder > 0 ? currentMaxItemsInOrder : maxItemsInOrder);
+    }
+
+    private float GetCurrentGhostChance()
+    {
+        if (unlockedMenuCountExcludingDefault < ratingUnlockCount)
+        {
+            return 0f;
+        }
+
+        if (ReputationRatingManager.Instance == null || !ReputationRatingManager.Instance.IsRatingUnlocked)
+        {
+            return ghostChance;
+        }
+
+        switch (ReputationRatingManager.Instance.CurrentAngryEventBand)
+        {
+            case 0: return ghostChanceScore0;
+            case 1: return ghostChanceRating1;
+            case 2: return ghostChanceRating2;
+            case 3: return ghostChanceRating3;
+            case 4: return ghostChanceRating4;
+            case 5: return ghostChanceRating5;
+            default: return ghostChance;
+        }
+    }
     private void EnsureDefaultIceWaterUnlocked(MenuUnlockSaveData unlockSaveData)
     {
         MenuUnlockState defaultMenuState = unlockSaveData.GetOrCreate("0");

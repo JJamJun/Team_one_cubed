@@ -52,6 +52,11 @@ public class UIStationScoller : MonoBehaviour
             return;
         }
 
+        if (CookingMiniGameController.WasCookingMiniGameClosedThisFrame)
+        {
+            return;
+        }
+
         if (keyboard.qKey.wasPressedThisFrame)
         {
             MoveLeftOneStation();

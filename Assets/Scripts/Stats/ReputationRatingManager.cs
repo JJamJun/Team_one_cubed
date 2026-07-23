@@ -1,4 +1,4 @@
-﻿using TMPro;
+using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -7,6 +7,7 @@ public class ReputationRatingManager : MonoBehaviour
     public static ReputationRatingManager Instance { get; private set; }
 
     [Header("UI References")]
+    [SerializeField] private GameObject ratingArea;
     [SerializeField] private TMP_Text blankStar;
     [SerializeField] private TMP_Text fullStar;
     [SerializeField] private RectTransform fullStarMask;
@@ -14,33 +15,58 @@ public class ReputationRatingManager : MonoBehaviour
     [SerializeField] private TMP_Text ratingValueText;
     [SerializeField, Min(0f)] private float ratingTextGap = 4f;
 
+    [Header("Unlock Settings")]
+    [SerializeField] private string unlockSaveFileName = "menu_progress.json";
+    [SerializeField] private string defaultMenuId = "0";
+    [SerializeField, Min(0)] private int ratingUnlockCount = 2;
+    [SerializeField, Min(0.1f)] private float unlockSavePollInterval = 0.5f;
+
     [Header("Rating Range")]
-    [SerializeField] private float minRating = 0f;
-    [SerializeField] private float maxRating = 5f;
+    [SerializeField] private float minScore = 0f;
+    [SerializeField] private float maxScore = 50f;
+    [SerializeField] private float initialUnlockedScore = 25f;
+    [SerializeField, Min(0.01f)] private float pointsPerStar = 10f;
 
-    [Header("\uD3C9\uD310 \uC0C1\uC2B9")]
-    [SerializeField, InspectorName("\uD3C9\uD310 \uC0C1\uC2B9 \uACC4\uC218"), Min(0f)] private float reputationIncreaseMultiplier = 1f;
-    [SerializeField, InspectorName("\uC77C\uBC18 \uC74C\uB8CC \uC131\uACF5")] private float normalDrinkSuccessIncrease = 1f;
-    [SerializeField, InspectorName("50% \uB0B4 1\uC794 \uC131\uACF5")] private float fastOneDrinkIncrease = 2f;
-    [SerializeField, InspectorName("50% \uB0B4 2\uC794 \uC131\uACF5")] private float fastTwoDrinkIncrease = 4f;
-    [SerializeField, InspectorName("50% \uB0B4 3\uC794 \uC774\uC0C1 \uC131\uACF5")] private float fastThreeDrinkIncrease = 5f;
-    [SerializeField, InspectorName("\uADC0\uC2E0 \uC74C\uB8CC \uC131\uACF5")] private float ghostDrinkSuccessIncrease = 5f;
+    [Header("Reputation Increase")]
+    [SerializeField, InspectorName("귀신 만족")] private float ghostSatisfiedIncrease = 10f;
+    [SerializeField, InspectorName("영수증 시간 50% 이상 남김")] private float fastReceiptIncrease = 2f;
+    [SerializeField, InspectorName("음료 1잔당 성공")] private float perDrinkSuccessIncrease = 2f;
+    [SerializeField, InspectorName("2~3연속 성공")] private float successStreak2To3Increase = 2f;
+    [SerializeField, InspectorName("4~6연속 성공")] private float successStreak4To6Increase = 4f;
+    [SerializeField, InspectorName("7~9연속 성공")] private float successStreak7To9Increase = 6f;
+    [SerializeField, InspectorName("10연속 이상 성공")] private float successStreak10PlusIncrease = 8f;
 
-    [Header("\uD3C9\uD310 \uD558\uB77D")]
-    [SerializeField, InspectorName("\uD3C9\uD310 \uD558\uB77D \uACC4\uC218"), Min(0f)] private float reputationDecreaseMultiplier = 1f;
-    [SerializeField, InspectorName("\uC8FC\uBB38 \uC624\uC785\uB825")] private float wrongOrderDecrease = 3f;
-    [SerializeField, InspectorName("\uC601\uC218\uC99D \uC2DC\uAC04 \uCD08\uACFC")] private float receiptTimeoutDecrease = 5f;
-    [SerializeField, InspectorName("Failed \uC74C\uB8CC \uD22C\uC785")] private float failedDrinkDecrease = 10f;
+    [Header("Reputation Decrease")]
+    [SerializeField, InspectorName("Failed 음료 투입")] private float failedDrinkDecrease = 14f;
+    [SerializeField, InspectorName("손님 화남 ANGRY 연출")] private float angryEventDecrease = 8f;
+    [SerializeField, InspectorName("카운터 인내심 초과")] private float counterPatienceDecrease = 4f;
+    [SerializeField, InspectorName("영수증 소실")] private float receiptLostDecrease = 4f;
+    [SerializeField, InspectorName("POS 주문 오입력")] private float wrongOrderDecrease = 2f;
 
-    private float currentRating;
-    private float successRatingTotal;
-    private int successRatingCount;
-    private float reputationPenaltyTotal;
+    [Header("Band Multipliers")]
+    [SerializeField, InspectorName("1점대 상승"), Min(0f)] private float band1IncreaseMultiplier = 2f;
+    [SerializeField, InspectorName("1점대 하락"), Min(0f)] private float band1DecreaseMultiplier = 0.2f;
+    [SerializeField, InspectorName("2점대 상승"), Min(0f)] private float band2IncreaseMultiplier = 1f;
+    [SerializeField, InspectorName("2점대 하락"), Min(0f)] private float band2DecreaseMultiplier = 1f;
+    [SerializeField, InspectorName("3점대 상승"), Min(0f)] private float band3IncreaseMultiplier = 1f;
+    [SerializeField, InspectorName("3점대 하락"), Min(0f)] private float band3DecreaseMultiplier = 1f;
+    [SerializeField, InspectorName("4점대 상승"), Min(0f)] private float band4IncreaseMultiplier = 0.8f;
+    [SerializeField, InspectorName("4점대 하락"), Min(0f)] private float band4DecreaseMultiplier = 1.2f;
+    [SerializeField, InspectorName("5점대 상승"), Min(0f)] private float band5IncreaseMultiplier = 0.5f;
+    [SerializeField, InspectorName("5점대 하락"), Min(0f)] private float band5DecreaseMultiplier = 1.5f;
+
+    private float currentScore;
+    private int successStreak;
+    private bool isRatingUnlocked;
+    private float nextUnlockSavePollTime;
     private float fullStarWidth;
 
-
-    public float CurrentRating => currentRating;
-
+    public float CurrentRating => CurrentStarRating;
+    public float CurrentScore => currentScore;
+    public float CurrentStarRating => Mathf.Clamp(currentScore / Mathf.Max(0.01f, pointsPerStar), 0f, 5f);
+    public int CurrentRatingBand => GetScoreBand(currentScore);
+    public int CurrentAngryEventBand => currentScore <= minScore ? 0 : CurrentRatingBand;
+    public bool IsRatingUnlocked => isRatingUnlocked;
 
     private void Awake()
     {
@@ -53,21 +79,17 @@ public class ReputationRatingManager : MonoBehaviour
         Instance = this;
         AutoBindReferences();
         PrepareFullStarMask();
-        ResetRating();
+        RefreshUnlockState(true);
     }
 
     private void OnEnable()
     {
-        Receipt.ReceiptTimedOut += RegisterReceiptTimeout;
         Receipt.FailedDrinkSubmitted += RegisterFailedDrinkSubmitted;
-        CustomerManager.WrongOrderSubmitted += RegisterWrongOrderSubmitted;
     }
 
     private void OnDisable()
     {
-        Receipt.ReceiptTimedOut -= RegisterReceiptTimeout;
         Receipt.FailedDrinkSubmitted -= RegisterFailedDrinkSubmitted;
-        CustomerManager.WrongOrderSubmitted -= RegisterWrongOrderSubmitted;
         if (Instance == this)
         {
             Instance = null;
@@ -78,85 +100,170 @@ public class ReputationRatingManager : MonoBehaviour
     {
         AutoBindReferences();
         CacheFullStarWidth();
-        currentRating = Mathf.Clamp(currentRating, minRating, maxRating);
+        currentScore = Mathf.Clamp(currentScore, minScore, maxScore);
         UpdateUI();
+    }
+
+    private void Update()
+    {
+        if (Time.unscaledTime < nextUnlockSavePollTime)
+        {
+            return;
+        }
+
+        nextUnlockSavePollTime = Time.unscaledTime + unlockSavePollInterval;
+        RefreshUnlockState(false);
     }
 
     public void ResetRating()
     {
-        successRatingTotal = 0f;
-        successRatingCount = 0;
-        reputationPenaltyTotal = 0f;
-        RecalculateRating();
+        successStreak = 0;
+        currentScore = isRatingUnlocked ? initialUnlockedScore : minScore;
         UpdateUI();
     }
 
     public void RegisterReceiptSuccess(int drinkCount, bool completedWithinHalfTime, bool isGhostCustomer)
     {
+        if (!isRatingUnlocked)
+        {
+            return;
+        }
+
+        successStreak++;
+        float amount = Mathf.Max(1, drinkCount) * perDrinkSuccessIncrease;
+
         if (isGhostCustomer)
         {
-            RegisterSuccessRating(ghostDrinkSuccessIncrease);
-            return;
+            amount += ghostSatisfiedIncrease;
         }
 
         if (completedWithinHalfTime)
         {
-            RegisterSuccessRating(GetFastSuccessIncrease(drinkCount));
-            return;
+            amount += fastReceiptIncrease;
         }
 
-        RegisterSuccessRating(normalDrinkSuccessIncrease);
+        amount += GetSuccessStreakIncrease();
+        IncreaseScore(amount);
     }
 
-    private void RegisterWrongOrderSubmitted()
+    public void RegisterCustomerAngryEvent()
     {
-        DecreaseRating(wrongOrderDecrease);
+        DecreaseScore(angryEventDecrease);
     }
 
-    private void RegisterReceiptTimeout()
+    public void RegisterCounterPatienceExpired()
     {
-        DecreaseRating(receiptTimeoutDecrease);
+        DecreaseScore(counterPatienceDecrease);
+    }
+
+    public void RegisterReceiptLost()
+    {
+        DecreaseScore(receiptLostDecrease);
+    }
+
+    public void RegisterWrongOrderSubmitted()
+    {
+        DecreaseScore(wrongOrderDecrease);
     }
 
     private void RegisterFailedDrinkSubmitted()
     {
-        DecreaseRating(failedDrinkDecrease);
+        DecreaseScore(failedDrinkDecrease);
     }
 
-    private void RegisterSuccessRating(float amount)
+    private void IncreaseScore(float amount)
     {
-        successRatingTotal += amount * reputationIncreaseMultiplier;
-        successRatingCount++;
-        RecalculateRating();
+        currentScore = Mathf.Clamp(currentScore + amount * GetIncreaseMultiplierForCurrentBand(), minScore, maxScore);
         UpdateUI();
     }
 
-    private void DecreaseRating(float amount)
+    private void DecreaseScore(float amount)
     {
-        reputationPenaltyTotal += amount * reputationDecreaseMultiplier;
-        RecalculateRating();
+        if (!isRatingUnlocked)
+        {
+            return;
+        }
+
+        successStreak = 0;
+        currentScore = Mathf.Clamp(currentScore - amount * GetDecreaseMultiplierForCurrentBand(), minScore, maxScore);
         UpdateUI();
     }
 
-    private void RecalculateRating()
+    private float GetSuccessStreakIncrease()
     {
-        float successAverage = successRatingCount > 0 ? successRatingTotal / successRatingCount : minRating;
-        currentRating = Mathf.Clamp(successAverage - reputationPenaltyTotal, minRating, maxRating);
+        if (successStreak >= 10)
+        {
+            return successStreak10PlusIncrease;
+        }
+
+        if (successStreak >= 7)
+        {
+            return successStreak7To9Increase;
+        }
+
+        if (successStreak >= 4)
+        {
+            return successStreak4To6Increase;
+        }
+
+        if (successStreak >= 2)
+        {
+            return successStreak2To3Increase;
+        }
+
+        return 0f;
     }
 
-    private float GetFastSuccessIncrease(int drinkCount)
+    private float GetIncreaseMultiplierForCurrentBand()
     {
-        if (drinkCount <= 1)
+        switch (CurrentRatingBand)
         {
-            return fastOneDrinkIncrease;
+            case 1: return band1IncreaseMultiplier;
+            case 2: return band2IncreaseMultiplier;
+            case 3: return band3IncreaseMultiplier;
+            case 4: return band4IncreaseMultiplier;
+            case 5: return band5IncreaseMultiplier;
+            default: return band1IncreaseMultiplier;
+        }
+    }
+
+    private float GetDecreaseMultiplierForCurrentBand()
+    {
+        switch (CurrentRatingBand)
+        {
+            case 1: return band1DecreaseMultiplier;
+            case 2: return band2DecreaseMultiplier;
+            case 3: return band3DecreaseMultiplier;
+            case 4: return band4DecreaseMultiplier;
+            case 5: return band5DecreaseMultiplier;
+            default: return band1DecreaseMultiplier;
+        }
+    }
+
+    private int GetScoreBand(float score)
+    {
+        if (score <= 10f) return 1;
+        if (score <= 20f) return 2;
+        if (score <= 30f) return 3;
+        if (score <= 40f) return 4;
+        return 5;
+    }
+
+    private void RefreshUnlockState(bool force)
+    {
+        bool nextUnlocked = UnlockProgressUtility.CountUnlockedMenusExcludingDefault(unlockSaveFileName, defaultMenuId) >= ratingUnlockCount;
+        if (!force && nextUnlocked == isRatingUnlocked)
+        {
+            return;
         }
 
-        if (drinkCount == 2)
+        isRatingUnlocked = nextUnlocked;
+        if (ratingArea != null)
         {
-            return fastTwoDrinkIncrease;
+            ratingArea.SetActive(isRatingUnlocked);
         }
 
-        return fastThreeDrinkIncrease;
+        ResetRating();
     }
 
     private void UpdateUI()
@@ -172,8 +279,8 @@ public class ReputationRatingManager : MonoBehaviour
             return;
         }
 
-        float range = Mathf.Max(0.01f, maxRating - minRating);
-        float normalizedRating = Mathf.Clamp01((currentRating - minRating) / range);
+        float range = Mathf.Max(0.01f, maxScore - minScore);
+        float normalizedRating = Mathf.Clamp01((currentScore - minScore) / range);
         fullStarMask.SetSizeWithCurrentAnchors(RectTransform.Axis.Horizontal, fullStarWidth * normalizedRating);
     }
 
@@ -181,7 +288,7 @@ public class ReputationRatingManager : MonoBehaviour
     {
         if (ratingValueText != null)
         {
-            ratingValueText.text = currentRating.ToString("0.0");
+            ratingValueText.text = Mathf.RoundToInt(currentScore).ToString();
         }
 
         UpdateRatingValuePosition();
@@ -272,6 +379,15 @@ public class ReputationRatingManager : MonoBehaviour
 
     private void AutoBindReferences()
     {
+        if (ratingArea == null)
+        {
+            Transform ratingAreaTransform = FindSceneTransform("RatingArea");
+            if (ratingAreaTransform != null)
+            {
+                ratingArea = ratingAreaTransform.gameObject;
+            }
+        }
+
         if (blankStar == null)
         {
             blankStar = FindSceneComponent<TMP_Text>("BlankStar");
@@ -314,4 +430,3 @@ public class ReputationRatingManager : MonoBehaviour
         return null;
     }
 }
-

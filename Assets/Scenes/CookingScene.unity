@@ -3496,7 +3496,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: 21.819998, y: -25.399996}
+  m_AnchoredPosition: {x: 6.7249975, y: -25.399996}
   m_SizeDelta: {x: 200, y: 50}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &413107839
@@ -3519,7 +3519,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: 0.0
+  m_text: 0
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: def0130b067c643468c7bb1e5aa180ba, type: 2}
   m_sharedMaterial: {fileID: -4430556824082795752, guid: def0130b067c643468c7bb1e5aa180ba, type: 2}
@@ -3643,7 +3643,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 8f4b1d2a6c1f4a4fa752d7f6d188f79a, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  timeLimitSeconds: 30
+  timeLimitSeconds: 40
   timeIncreaseSeconds: 5
 --- !u!1 &457158596
 GameObject:
@@ -4265,6 +4265,18 @@ MonoBehaviour:
   menuInfoCsv: {fileID: 4900000, guid: 46e3ca984147f8c46a9cf6d445df973c, type: 3}
   unlockSaveFileName: menu_progress.json
   unlockSavePollInterval: 0.5
+  defaultMenuId: 0
+  ratingUnlockCount: 2
+  mixedOrderUnlockCount: 3
+  onlyDefaultMaxItems: 1
+  oneUnlockMaxItems: 2
+  onlyDefaultSpawnTime: 10
+  ghostChanceScore0: 0
+  ghostChanceRating1: 0.01
+  ghostChanceRating2: 0.05
+  ghostChanceRating3: 0.1
+  ghostChanceRating4: 0.2
+  ghostChanceRating5: 0.25
   stationScroller: {fileID: 1289790320}
   ghostEffectDirector: {fileID: 968220003}
 --- !u!4 &636718269
@@ -5867,7 +5879,7 @@ MonoBehaviour:
   menuCommandManager: {fileID: 12385208}
   timerImage: {fileID: 1320865256}
   timerRect: {fileID: 1320865255}
-  cookingTimeLimit: 3
+  cookingTimeLimit: 4
   timerStartColor: {r: 0, g: 1, b: 0, a: 1}
   timerEndColor: {r: 1, g: 0, b: 0, a: 1}
   virginGhostCommandShakeAmplitude: 6
@@ -6883,12 +6895,12 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 35476195935134440985f9fa82e17b46, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  monsterChanceRating0: 1
-  monsterChanceRating1: 0.8
-  monsterChanceRating2: 0.6
-  monsterChanceRating3: 0.4
+  monsterChanceRating0: 0.6
+  monsterChanceRating1: 0.55
+  monsterChanceRating2: 0.4
+  monsterChanceRating3: 0.3
   monsterChanceRating4: 0.2
-  monsterChanceRating5: 0
+  monsterChanceRating5: 0.05
   angryObject: {fileID: 1319042612}
   angryPos: {fileID: 1824464928}
   counterPanel: {fileID: 177391948}
@@ -11778,24 +11790,43 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 9a1e1c8ed22b44a58d6103df42a74382, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  ratingArea: {fileID: 925629946}
   blankStar: {fileID: 1590395999}
   fullStar: {fileID: 641050930}
   fullStarMask: {fileID: 0}
   ratingLabelText: {fileID: 600097491}
   ratingValueText: {fileID: 413107839}
   ratingTextGap: 4
-  minRating: 0
-  maxRating: 5
-  reputationIncreaseMultiplier: 1
-  normalDrinkSuccessIncrease: 1
-  fastOneDrinkIncrease: 2
-  fastTwoDrinkIncrease: 3
-  fastThreeDrinkIncrease: 4
-  ghostDrinkSuccessIncrease: 5
-  reputationDecreaseMultiplier: 1
-  wrongOrderDecrease: 3
-  receiptTimeoutDecrease: 5
+  unlockSaveFileName: menu_progress.json
+  defaultMenuId: 0
+  ratingUnlockCount: 2
+  unlockSavePollInterval: 0.5
+  minScore: 0
+  maxScore: 50
+  initialUnlockedScore: 25
+  pointsPerStar: 10
+  ghostSatisfiedIncrease: 10
+  fastReceiptIncrease: 2
+  perDrinkSuccessIncrease: 2
+  successStreak2To3Increase: 2
+  successStreak4To6Increase: 4
+  successStreak7To9Increase: 6
+  successStreak10PlusIncrease: 8
   failedDrinkDecrease: 5
+  angryEventDecrease: 8
+  counterPatienceDecrease: 4
+  receiptLostDecrease: 4
+  wrongOrderDecrease: 3
+  band1IncreaseMultiplier: 2
+  band1DecreaseMultiplier: 0.2
+  band2IncreaseMultiplier: 1
+  band2DecreaseMultiplier: 1
+  band3IncreaseMultiplier: 1
+  band3DecreaseMultiplier: 1
+  band4IncreaseMultiplier: 0.8
+  band4DecreaseMultiplier: 1.2
+  band5IncreaseMultiplier: 0.5
+  band5DecreaseMultiplier: 1.5
 --- !u!1 &2030105039
 GameObject:
   m_ObjectHideFlags: 0
