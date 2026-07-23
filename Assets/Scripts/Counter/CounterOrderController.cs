@@ -19,6 +19,7 @@ public class CounterOrderController : MonoBehaviour
     [SerializeField] private RectTransform orderTextBox;
     [SerializeField] private TMP_Text orderText;
     [SerializeField] private TMP_Text printZoneText;
+    [SerializeField] private TMP_Text printZoneErrorText;
     [SerializeField] private RectTransform receiptTextBox;
     [SerializeField] private TMP_Text receiptText;
     [SerializeField] private Color normalOrderTextColor = Color.black;
@@ -37,8 +38,11 @@ public class CounterOrderController : MonoBehaviour
     private readonly List<string> pendingClicks = new List<string>();
     private readonly List<OrderLine> submittedOrderLines = new List<OrderLine>();
     private bool orderSubmitted;
+    private bool hasCapturedPrintZoneColor;
+    private Color originalPrintZoneColor;
 
     public static event System.Action<int> OnReceiptPrinted;
+    public static System.Func<string, string> GetSubmittedOrderError;
 
     private void Awake()
     {
@@ -71,6 +75,11 @@ public class CounterOrderController : MonoBehaviour
 
     private void Update()
     {
+        if (GameInputBlocker.IsInputBlocked)
+        {
+            return;
+        }
+
         UpdateReceiptMachineClick();
         UpdateFloatingOrderTextBox();
         UpdateFloatingReceiptTextBox();
@@ -78,6 +87,11 @@ public class CounterOrderController : MonoBehaviour
 
     public void RegisterMenuClick(string menuName)
     {
+        if (GameInputBlocker.IsInputBlocked)
+        {
+            return;
+        }
+
         if (string.IsNullOrWhiteSpace(menuName))
         {
             return;
@@ -96,8 +110,24 @@ public class CounterOrderController : MonoBehaviour
 
     private void SubmitOrder()
     {
-        orderSubmitted = true;
+        if (GameInputBlocker.IsInputBlocked)
+        {
+            return;
+        }
+
         BuildSubmittedOrder();
+        string submittedOrderText = CreateOrderText();
+        string submissionError = GetSubmittedOrderError != null ? GetSubmittedOrderError(submittedOrderText) : null;
+
+        if (submissionError != null)
+        {
+            Debug.Log($"{nameof(CounterOrderController)} rejected order:\n{submittedOrderText}");
+            ClearSubmittedCounterOrder();
+            ShowPrintZoneWarning(submissionError);
+            return;
+        }
+
+        orderSubmitted = true;
         UpdateOrderText();
 
         if (receiptMachine0 != null)
@@ -110,11 +140,16 @@ public class CounterOrderController : MonoBehaviour
             receiptMachine1.SetActive(true);
         }
 
-        Debug.Log($"{nameof(CounterOrderController)} submitted order:\n{CreateOrderText()}");
+        Debug.Log($"{nameof(CounterOrderController)} submitted order:\n{submittedOrderText}");
     }
 
     private void CancelOrder()
     {
+        if (GameInputBlocker.IsInputBlocked)
+        {
+            return;
+        }
+
         pendingClicks.Clear();
         submittedOrderLines.Clear();
         orderSubmitted = false;
@@ -127,6 +162,11 @@ public class CounterOrderController : MonoBehaviour
 
     private void MoveBackToCounter()
     {
+        if (GameInputBlocker.IsInputBlocked)
+        {
+            return;
+        }
+
         if (cameraTransition != null)
         {
             cameraTransition.MoveToCounter();
@@ -183,8 +223,64 @@ public class CounterOrderController : MonoBehaviour
             return;
         }
 
+        RestorePrintZoneColor();
+        SetPrintZoneErrorVisible(false);
         IReadOnlyList<OrderLine> pendingOrderLines = BuildOrderLines(pendingClicks);
         printZoneText.text = pendingOrderLines.Count > 0 ? CreateOrderText(pendingOrderLines) : string.Empty;
+    }
+
+    private void ShowPrintZoneWarning(string message)
+    {
+        if (string.IsNullOrEmpty(message))
+        {
+            return;
+        }
+
+        if (printZoneErrorText != null)
+        {
+            printZoneErrorText.text = message;
+            SetPrintZoneErrorVisible(true);
+            return;
+        }
+
+        if (printZoneText != null)
+        {
+            CapturePrintZoneColor();
+            printZoneText.text = message;
+            printZoneText.color = Color.red;
+        }
+    }
+
+    private void SetPrintZoneErrorVisible(bool isVisible)
+    {
+        if (printZoneText != null)
+        {
+            printZoneText.gameObject.SetActive(!isVisible);
+        }
+
+        if (printZoneErrorText != null)
+        {
+            printZoneErrorText.gameObject.SetActive(isVisible);
+        }
+    }
+
+    private void CapturePrintZoneColor()
+    {
+        if (hasCapturedPrintZoneColor || printZoneText == null)
+        {
+            return;
+        }
+
+        originalPrintZoneColor = printZoneText.color;
+        hasCapturedPrintZoneColor = true;
+    }
+
+    private void RestorePrintZoneColor()
+    {
+        if (hasCapturedPrintZoneColor)
+        {
+            printZoneText.color = originalPrintZoneColor;
+        }
     }
 
     private string CreateOrderText()
@@ -371,6 +467,11 @@ public class CounterOrderController : MonoBehaviour
 
     private void MoveToKitchen()
     {
+        if (GameInputBlocker.IsInputBlocked)
+        {
+            return;
+        }
+
         if (cameraTransition != null)
         {
             cameraTransition.MoveToKitchen();
@@ -821,7 +922,31 @@ public class CounterOrderController : MonoBehaviour
             GameObject printZoneObject = FindGameObjectByName("PrintZone");
             if (printZoneObject != null)
             {
-                printZoneText = printZoneObject.GetComponentInChildren<TMP_Text>(true);
+                Transform listTransform = FindChildByName(printZoneObject.transform, "list");
+                if (listTransform != null)
+                {
+                    printZoneText = listTransform.GetComponent<TMP_Text>();
+                }
+
+                if (printZoneText == null)
+                {
+                    printZoneText = printZoneObject.GetComponentInChildren<TMP_Text>(true);
+                }
+
+                CapturePrintZoneColor();
+            }
+        }
+
+        if (printZoneErrorText == null)
+        {
+            GameObject printZoneObject = FindGameObjectByName("PrintZone");
+            if (printZoneObject != null)
+            {
+                Transform listErrorTransform = FindChildByName(printZoneObject.transform, "listError");
+                if (listErrorTransform != null)
+                {
+                    printZoneErrorText = listErrorTransform.GetComponent<TMP_Text>();
+                }
             }
         }
 
@@ -911,6 +1036,26 @@ public class CounterOrderController : MonoBehaviour
             if (target.gameObject.scene.IsValid() && target.name == targetName)
             {
                 return target.gameObject;
+            }
+        }
+
+        return null;
+    }
+
+    private static Transform FindChildByName(Transform parent, string targetName)
+    {
+        if (parent == null)
+        {
+            return null;
+        }
+
+        Transform[] children = parent.GetComponentsInChildren<Transform>(true);
+        for (int i = 0; i < children.Length; i++)
+        {
+            Transform child = children[i];
+            if (child.name == targetName)
+            {
+                return child;
             }
         }
 
