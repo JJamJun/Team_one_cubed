@@ -4,8 +4,6 @@ using DG.Tweening;
 [RequireComponent(typeof(AudioLowPassFilter))]
 public class BgmManager : MonoBehaviour
 {
-    public static BgmManager Instance { get; private set; }
-
     [Header("Playlist")]
     [SerializeField] private AudioClip[] bgmPlaylist;
     [SerializeField] private float crossfadeDuration = 3f;
@@ -20,31 +18,8 @@ public class BgmManager : MonoBehaviour
     private AudioLowPassFilter lowPassFilter;
     private bool isCrossfading = false;
 
-    public bool IsAnyTrackPlaying
-    {
-        get
-        {
-            if (bgmSources == null)
-            {
-                return false;
-            }
-
-            for (int i = 0; i < bgmSources.Length; i++)
-            {
-                if (bgmSources[i] != null && bgmSources[i].isPlaying)
-                {
-                    return true;
-                }
-            }
-
-            return false;
-        }
-    }
-
     private void Awake()
     {
-        Instance = this;
-
         //two audio sources for crossfading
         bgmSources = new AudioSource[2];
         for (int i = 0; i < 2; i++)
@@ -57,30 +32,6 @@ public class BgmManager : MonoBehaviour
 
         lowPassFilter = GetComponent<AudioLowPassFilter>();
         lowPassFilter.cutoffFrequency = normalCutoff;
-    }
-
-    public void StopAllTracks()
-    {
-        DOTween.Kill(this);
-        if (bgmSources == null)
-        {
-            return;
-        }
-
-        for (int i = 0; i < bgmSources.Length; i++)
-        {
-            AudioSource source = bgmSources[i];
-            if (source == null)
-            {
-                continue;
-            }
-
-            source.DOKill();
-            source.Stop();
-            source.volume = 0f;
-        }
-
-        isCrossfading = false;
     }
 
     private void Start()
@@ -142,43 +93,6 @@ public class BgmManager : MonoBehaviour
         });
 
         currentSourceIndex = nextSourceIndex;
-    }
-
-    public void ResumePlaylist()
-    {
-        if (bgmPlaylist == null || bgmPlaylist.Length == 0 || bgmSources == null || IsAnyTrackPlaying)
-        {
-            return;
-        }
-
-        isCrossfading = true;
-        AudioSource source = bgmSources[currentSourceIndex];
-        if (source == null)
-        {
-            isCrossfading = false;
-            return;
-        }
-
-        source.DOKill();
-        source.clip = GetRandomClip(source.clip);
-        source.volume = 0f;
-        source.Play();
-        source.DOFade(1f, Mathf.Max(0.01f, crossfadeDuration * 0.5f))
-            .OnComplete(() => isCrossfading = false);
-    }
-
-    private AudioClip GetRandomClip(AudioClip previousClip)
-    {
-        AudioClip nextClip = bgmPlaylist[Random.Range(0, bgmPlaylist.Length)];
-        if (bgmPlaylist.Length > 1)
-        {
-            while (nextClip == previousClip)
-            {
-                nextClip = bgmPlaylist[Random.Range(0, bgmPlaylist.Length)];
-            }
-        }
-
-        return nextClip;
     }
 
 

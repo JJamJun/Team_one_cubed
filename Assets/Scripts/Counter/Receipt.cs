@@ -7,9 +7,7 @@ using UnityEngine.UI;
 
 public class Receipt : MonoBehaviour
 {
-    public static event Action<int, bool, string, bool> ReceiptSlotEmptied;
-    public static event Action ReceiptTimedOut;
-    public static event Action FailedDrinkSubmitted;
+    public static event Action<int, bool, string> ReceiptSlotEmptied;
 
     [SerializeField] private TMP_Text orderNameText;
     [SerializeField] private string receiptText;
@@ -51,12 +49,6 @@ public class Receipt : MonoBehaviour
             return;
         }
 
-        if (ShouldPauseTimer())
-        {
-            ResetShake();
-            return;
-        }
-
         timerRemaining -= Time.deltaTime;
         float fillAmount = Mathf.Clamp01(timerRemaining / Mathf.Max(0.01f, timerMaxDuration));
         UpdateTimerVisual(fillAmount);
@@ -67,7 +59,6 @@ public class Receipt : MonoBehaviour
         }
 
         Debug.Log($"\uC601\uC218\uC99D {GetDisplaySlotIndex()}\uBC88\uC9F8: \uC2DC\uAC04 \uCD08\uACFC!");
-        ReceiptTimedOut?.Invoke();
         ClearReceiptSlot(false);
     }
 
@@ -100,13 +91,11 @@ public class Receipt : MonoBehaviour
             return false;
         }
 
-        bool completedWithinHalfTime = IsWithinHalfTime();
         IncreaseRemainingTime();
 
         if (cup.CookingResultState != CupCookingResultState.Succeeded)
         {
             Debug.Log($"{nameof(Receipt)} ignored cup because it is not successful.");
-            FailedDrinkSubmitted?.Invoke();
             return false;
         }
 
@@ -137,7 +126,7 @@ public class Receipt : MonoBehaviour
             if (orderLines.Count == 0)
             {
                 Debug.Log($"\uC601\uC218\uC99D {GetDisplaySlotIndex()}\uBC88\uC9F8: \uC8FC\uBB38 \uC644\uC218!");
-                ClearReceiptSlot(true, completedWithinHalfTime);
+                ClearReceiptSlot(true);
             }
 
             return true;
@@ -222,11 +211,6 @@ public class Receipt : MonoBehaviour
 
     private void ClearReceiptSlot(bool success)
     {
-        ClearReceiptSlot(success, false);
-    }
-
-    private void ClearReceiptSlot(bool success, bool completedWithinHalfTime)
-    {
         timerRunning = false;
         UpdateTimerVisual(0f);
         ResetShake();
@@ -236,7 +220,7 @@ public class Receipt : MonoBehaviour
         }
 
         PlayReceiptResultSfx(success);
-        ReceiptSlotEmptied?.Invoke(slotIndex, success, originalReceiptText, completedWithinHalfTime);
+        ReceiptSlotEmptied?.Invoke(slotIndex, success, originalReceiptText);
         Debug.Log($"{nameof(Receipt)} slot emptied: {slotIndex}");
         gameObject.SetActive(false);
     }
@@ -299,7 +283,7 @@ public class Receipt : MonoBehaviour
         AutoBindTimerImage();
         AutoBindTimerManager();
         timerMaxDuration = GetTimeLimitSeconds();
-        if (BuffDebuffManager.ReceiptBuffActive)
+        if (BuffDebuffManager.GrimReaperBuffActive)
         {
             timerMaxDuration += BuffDebuffManager.ReceiptPatienceBonusSeconds;
         }
@@ -328,20 +312,10 @@ public class Receipt : MonoBehaviour
         return timerManager != null ? timerManager.TimeLimitSeconds : 30f;
     }
 
-    private bool ShouldPauseTimer()
-    {
-        return AngryManager.Instance != null && AngryManager.Instance.IsAngryEventPlaying;
-    }
-
     private float GetTimeIncreaseSeconds()
     {
         AutoBindTimerManager();
         return timerManager != null ? timerManager.TimeIncreaseSeconds : 5f;
-    }
-
-    private bool IsWithinHalfTime()
-    {
-        return timerMaxDuration > 0f && timerRemaining >= timerMaxDuration * 0.5f;
     }
 
     private void AutoBindReceiptVisuals()
@@ -388,7 +362,7 @@ public class Receipt : MonoBehaviour
 
     private void UpdateShake()
     {
-        if (!BuffDebuffManager.VirginGhostDebuffActive || receiptRect == null || !timerRunning || ShouldPauseTimer())
+        if (!BuffDebuffManager.VirginGhostDebuffActive || receiptRect == null || !timerRunning)
         {
             ResetShake();
             return;
@@ -420,7 +394,7 @@ public class Receipt : MonoBehaviour
 
         timerImage.fillAmount = Mathf.Clamp01(fillAmount);
         CaptureTimerColor();
-        Color color = BuffDebuffManager.ReceiptBuffActive
+        Color color = BuffDebuffManager.GrimReaperBuffActive
             ? BuffDebuffManager.UpgradedReceiptColor
             : originalTimerColor;
         color.a = 0.5f;

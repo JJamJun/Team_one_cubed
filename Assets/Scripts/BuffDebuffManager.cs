@@ -56,9 +56,6 @@ public class BuffDebuffManager : MonoBehaviour
     public static Color UpgradedReceiptColor => Instance != null ? Instance.upgradedReceiptColor : Color.yellow;
     public static float CookingTimerDecreaseMultiplier => Instance != null && Instance.grimReaperDebuffActive ? Instance.cookingTimerDecreaseMultiplier : 1f;
     public static Color DokkaebiShieldTextColor => Instance != null ? Instance.dokkaebiShieldTextColor : Color.yellow;
-    public static bool ReceiptBuffActive => DokkaebiBuffActive;
-    public static bool CommandMistakeShieldBuffActive => GrimReaperBuffActive;
-    public static Color CommandMistakeShieldTextColor => DokkaebiShieldTextColor;
 
     private void Awake()
     {
