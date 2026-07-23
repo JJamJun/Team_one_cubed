@@ -245,8 +245,12 @@ public class UpgradeMenuRuntimeBuilder : MonoBehaviour
             return;
         }
 
-        walletSaveData.coin -= unlockPrice;
-        SaveWalletData(walletSaveData);
+        if (!TrySpendCoins(walletSaveData, unlockPrice))
+        {
+            PlayWarningAnimation(buttonObject.transform, "MoneyWARNING");
+            Debug.Log($"{nameof(UpgradeMenuRuntimeBuilder)}: Not enough currency to unlock {entry.MenuId}.");
+            return;
+        }
 
         unlockSaveData.SetUnlocked(entry.MenuId, true, 1);
         SaveUnlockData(unlockSaveData);
@@ -283,8 +287,12 @@ public class UpgradeMenuRuntimeBuilder : MonoBehaviour
             return;
         }
 
-        walletSaveData.coin -= upgradeCost;
-        SaveWalletData(walletSaveData);
+        if (!TrySpendCoins(walletSaveData, upgradeCost))
+        {
+            PlayWarningAnimation(buttonObject.transform, "MoneyWARNING");
+            Debug.Log($"{nameof(UpgradeMenuRuntimeBuilder)}: Not enough currency to upgrade {entry.MenuId}.");
+            return;
+        }
 
         state.level = Mathf.Clamp(state.level + 1, 1, UpgradeMenuEntry.MaxLevel);
         SaveUnlockData(unlockSaveData);
@@ -1223,7 +1231,13 @@ public class UpgradeMenuRuntimeBuilder : MonoBehaviour
         try
         {
             PlayerWalletSaveData saveData = JsonUtility.FromJson<PlayerWalletSaveData>(File.ReadAllText(path));
-            return saveData != null ? saveData : new PlayerWalletSaveData();
+            if (saveData == null)
+            {
+                saveData = new PlayerWalletSaveData();
+            }
+
+            saveData.MigrateLegacyMoneyField();
+            return saveData;
         }
         catch (Exception exception)
         {
@@ -1234,9 +1248,42 @@ public class UpgradeMenuRuntimeBuilder : MonoBehaviour
 
     private void SaveWalletData(PlayerWalletSaveData saveData)
     {
+        if (saveData == null)
+        {
+            saveData = new PlayerWalletSaveData();
+        }
+
+        saveData.SyncLegacyMoneyField();
         string path = GetWalletSavePath();
         Directory.CreateDirectory(Path.GetDirectoryName(path));
         File.WriteAllText(path, JsonUtility.ToJson(saveData, true));
+    }
+
+    private bool TrySpendCoins(PlayerWalletSaveData walletSaveData, int amount)
+    {
+        amount = Mathf.Max(0, amount);
+        if (GameStatsManager.Instance != null)
+        {
+            bool spent = GameStatsManager.Instance.TrySpendCoins(amount);
+            if (spent)
+            {
+                PlayerWalletSaveData refreshedWallet = LoadWalletData();
+                walletSaveData.coin = refreshedWallet.coin;
+                walletSaveData.soul = refreshedWallet.soul;
+                walletSaveData.money = refreshedWallet.money;
+            }
+
+            return spent;
+        }
+
+        if (walletSaveData.coin < amount)
+        {
+            return false;
+        }
+
+        walletSaveData.coin -= amount;
+        SaveWalletData(walletSaveData);
+        return true;
     }
 
     private string GetWalletSavePath()
@@ -1311,5 +1358,21 @@ public class UpgradeMenuRuntimeBuilder : MonoBehaviour
     {
         public int coin;
         public int soul;
+        public int money;
+
+        public void MigrateLegacyMoneyField()
+        {
+            if (coin <= 0 && money > 0)
+            {
+                coin = money;
+            }
+
+            SyncLegacyMoneyField();
+        }
+
+        public void SyncLegacyMoneyField()
+        {
+            money = coin;
+        }
     }
 }

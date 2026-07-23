@@ -115,7 +115,7 @@ public class AngryManager : MonoBehaviour
 
     private float GetMonsterChanceForCurrentRating()
     {
-        if (ReputationRatingManager.Instance != null && !ReputationRatingManager.Instance.IsRatingUnlocked)
+        if (ReputationRatingManager.Instance == null || !ReputationRatingManager.Instance.IsRatingUnlocked)
             return 0f;
 
         int ratingBand = ReputationRatingManager.Instance != null
