@@ -97,6 +97,7 @@ public class CookingMiniGameController : MonoBehaviour
     private bool hasCapturedArrowCmdPosition;
     private bool arrowCmdMeshWasShaken;
     private bool lastVirginGhostBuffActive;
+    private int nextCookingComboNumber = 1;
 
     private void Awake()
     {
@@ -149,6 +150,8 @@ public class CookingMiniGameController : MonoBehaviour
         if (pressedCommand.Value == currentCommand[inputIndex])
         {
             wrongIndex = -1;
+            PlayCookingComboSfx(nextCookingComboNumber);
+            nextCookingComboNumber++;
             inputIndex++;
 
             if (inputIndex >= currentCommand.Length)
@@ -168,6 +171,7 @@ public class CookingMiniGameController : MonoBehaviour
                 dokkaebiShieldAvailable = false;
                 dokkaebiShieldedIndex = inputIndex;
                 wrongIndex = -1;
+                ResetCookingComboSfx();
                 inputIndex++;
 
                 if (inputIndex >= currentCommand.Length)
@@ -186,6 +190,7 @@ public class CookingMiniGameController : MonoBehaviour
             }
 
             wrongIndex = inputIndex;
+            ResetCookingComboSfx();
             arrowInputEnabled = false;
             timerRunning = false;
             escapeExitEnabled = true;
@@ -194,6 +199,21 @@ public class CookingMiniGameController : MonoBehaviour
         }
 
         RenderArrowCommand();
+    }
+
+    private void PlayCookingComboSfx(int comboNumber)
+    {
+        if (SoundManager.Instance == null || SoundManager.Instance.SFX == null)
+        {
+            return;
+        }
+
+        SoundManager.Instance.SFX.PlayCookingCombo(comboNumber);
+    }
+
+    private void ResetCookingComboSfx()
+    {
+        nextCookingComboNumber = 1;
     }
 
     public bool TryStartCooking(CupDragController cup)
@@ -229,6 +249,7 @@ public class CookingMiniGameController : MonoBehaviour
         lastVirginGhostBuffActive = BuffDebuffManager.VirginGhostBuffActive;
         currentCommand = BuffDebuffManager.ApplyVirginGhostCommandReduction(currentBaseCommand);
         inputIndex = 0;
+        ResetCookingComboSfx();
         wrongIndex = -1;
         dokkaebiShieldAvailable = BuffDebuffManager.DokkaebiBuffActive;
         dokkaebiShieldedIndex = -1;
@@ -272,6 +293,7 @@ public class CookingMiniGameController : MonoBehaviour
         currentBaseCommand = string.Empty;
         currentCommand = string.Empty;
         inputIndex = 0;
+        ResetCookingComboSfx();
         wrongIndex = -1;
         commandComplete = false;
         arrowInputEnabled = false;

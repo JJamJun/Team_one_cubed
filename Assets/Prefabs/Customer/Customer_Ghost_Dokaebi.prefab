@@ -458,7 +458,14 @@ MonoBehaviour:
   arrivalDuration: 1.5
   moveDuration: 1
   bobbingAmplitude: 20
+  bobbingSpeed: 0.2
   maxPatience: 15
+  successDialogues:
+  - "\uCF08\uCF08! \uACE0\uB9C8\uC6CC!"
+  - "\uD750\uC544, \uC870\uAE08 \uB0AB\uAD70!"
+  - "\uC5ED\uC2DC \uC778\uAC04 \uC74C\uC2DD\uC774 \uC81C\uC77C \uB9DB\uC788\uC5B4!"
+  typeSpeed: 0.05
+  readDelayAfterTyping: 1
 --- !u!114 &4178178094041609584
 MonoBehaviour:
   m_ObjectHideFlags: 0

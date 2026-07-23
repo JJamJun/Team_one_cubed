@@ -900,8 +900,8 @@ RectTransform:
   - {fileID: 302586990}
   - {fileID: 1904094283}
   - {fileID: 1021707502}
-  - {fileID: 1137012504}
   - {fileID: 97008511}
+  - {fileID: 1137012504}
   m_Father: {fileID: 1289790319}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
@@ -1751,6 +1751,15 @@ MonoBehaviour:
   iceCubeSfx: {fileID: 8300000, guid: ea53ffb21d6adfd488c593c84d1f18ca, type: 3}
   pouringWaterSfx: {fileID: 8300000, guid: e3f98cac31ed3c440af83c482cf638c3, type: 3}
   machineSfx: {fileID: 8300000, guid: 56636ed54ea0ef648830c87c80fb4f36, type: 3}
+  cookingComboSfx:
+  - {fileID: 8300000, guid: f79998235f57ebf4c883a3a3affa96b5, type: 3}
+  - {fileID: 8300000, guid: 77a0ef8a6916ee043aed715315680ce1, type: 3}
+  - {fileID: 8300000, guid: 8e8235b3a37dbbe458bbba59086a9226, type: 3}
+  - {fileID: 8300000, guid: 363f4b94430a0f34faafa97a40500012, type: 3}
+  - {fileID: 8300000, guid: 656ec1c21a30db644a171d911edce754, type: 3}
+  - {fileID: 8300000, guid: 69c0cfc89dd50fd4b931df50231f2558, type: 3}
+  - {fileID: 8300000, guid: 457fe63cdcc92ce49a2f5d01aab4d745, type: 3}
+  - {fileID: 8300000, guid: bdb0bcdbe519aff428250ac40021651a, type: 3}
   moneySfx: {fileID: 8300000, guid: 8f86236c61719d3469ad438db30ed9ac, type: 3}
   failSfx: {fileID: 8300000, guid: f065ab6ab95d2904583a9a44c15881b5, type: 3}
   normalFootstep: {fileID: 8300000, guid: 5af2dde13958fcd4e8eeb637a0d45872, type: 3}
@@ -6897,7 +6906,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: -4336640709545847088, guid: eca6164c5c42f574fb2d2575a2efcc6b, type: 3}
+  m_Sprite: {fileID: 4469485797947232508, guid: 3240056c4da66304cb4191980b8adbb9, type: 3}
   m_Type: 0
   m_PreserveAspect: 0
   m_FillCenter: 1
@@ -8841,7 +8850,7 @@ MonoBehaviour:
   dokkaebiDebuffActive: 0
   dokkaebiShieldTextColor: {r: 1, g: 0.86, b: 0.08, a: 1}
   littleGhostBuffActive: 0
-  littleGhostDebuffActive: 1
+  littleGhostDebuffActive: 0
   unlockCostDiscountRatio: 0.2
 --- !u!1 &1762016718
 GameObject:
