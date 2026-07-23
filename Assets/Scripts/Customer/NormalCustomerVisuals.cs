@@ -21,9 +21,11 @@ public class NormalCustomerVisuals : MonoBehaviour, ICustomerVisuals
     [SerializeField] private Sprite angryMouth;
     [SerializeField] private Sprite scaryEyes;
     [SerializeField] private Sprite scaryMouth;
+    [SerializeField] private Sprite[] scaryBodySprites; // Array for the random scary bodies
 
     private Sprite defaultEyes;
     private Sprite defaultMouth;
+    private Sprite defaultBody; // To remember the original body
 
     private void Start()
     {
@@ -42,21 +44,38 @@ public class NormalCustomerVisuals : MonoBehaviour, ICustomerVisuals
         {
             defaultMouth = mouthImage.sprite;
         }
+
+        if (bodyImage != null)
+        {
+            defaultBody = bodyImage.sprite;
+        }
     }
 
     private void RandomizeAppearance()
     {
         if (clothesSprites.Length > 0 && clothesImage != null)
+        {
             clothesImage.sprite = clothesSprites[Random.Range(0, clothesSprites.Length)];
+            clothesImage.SetNativeSize();
+        }
 
         if (hairSprites.Length > 0 && hairImage != null)
+        {
             hairImage.sprite = hairSprites[Random.Range(0, hairSprites.Length)];
+            hairImage.SetNativeSize();
+        }
 
         if (eyeSprites.Length > 0 && eyesImage != null)
+        {
             eyesImage.sprite = eyeSprites[Random.Range(0, eyeSprites.Length)];
+            eyesImage.SetNativeSize();
+        }
 
         if (mouthSprites.Length > 0 && mouthImage != null)
+        {
             mouthImage.sprite = mouthSprites[Random.Range(0, mouthSprites.Length)];
+            mouthImage.SetNativeSize();
+        }
     }
 
     public void SetNeutral()
@@ -71,6 +90,7 @@ public class NormalCustomerVisuals : MonoBehaviour, ICustomerVisuals
 
     public void SetAngry()
     {
+        // 1. Handle Eyes
         if (scaryEyes != null && eyesImage != null)
         {
             eyesImage.sprite = scaryEyes;
@@ -80,6 +100,7 @@ public class NormalCustomerVisuals : MonoBehaviour, ICustomerVisuals
             eyesImage.sprite = angryEyes;
         }
 
+        // 2. Handle Mouth
         if (scaryMouth != null && mouthImage != null)
         {
             mouthImage.sprite = scaryMouth;
@@ -88,6 +109,12 @@ public class NormalCustomerVisuals : MonoBehaviour, ICustomerVisuals
         {
             mouthImage.sprite = angryMouth;
         }
+
+        // 3. Handle Body (Pick random scary body)
+        if (scaryBodySprites != null && scaryBodySprites.Length > 0 && bodyImage != null)
+        {
+            bodyImage.sprite = scaryBodySprites[Random.Range(0, scaryBodySprites.Length)];
+        }
     }
 
     private void RestoreDefaultMoodSprites()
@@ -95,11 +122,19 @@ public class NormalCustomerVisuals : MonoBehaviour, ICustomerVisuals
         if (eyesImage != null && defaultEyes != null)
         {
             eyesImage.sprite = defaultEyes;
+            eyesImage.SetNativeSize();
         }
 
         if (mouthImage != null && defaultMouth != null)
         {
             mouthImage.sprite = defaultMouth;
+            mouthImage.SetNativeSize();
+        }
+
+        if (bodyImage != null && defaultBody != null)
+        {
+            bodyImage.sprite = defaultBody;
+            bodyImage.SetNativeSize();
         }
     }
 

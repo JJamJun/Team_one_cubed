@@ -1,13 +1,10 @@
 fileFormatVersion: 2
-guid: c3e1d4146769b1d4087ce2b61ec362e6
+guid: 777291f0809eead40acd0b361d92e1eb
 TextureImporter:
   internalIDToNameTable:
   - first:
-      213: 692013227144346193
-    second: Char_Customer_Eyes_Scary_0
-  - first:
-      213: -8610327194277282688
-    second: Char_Customer_Eyes_Scary_1
+      213: -2075137023412651164
+    second: Char_Customer_Body_1 1_0
   externalObjects: {}
   serializedVersion: 13
   mipmaps:
@@ -49,7 +46,7 @@ TextureImporter:
   nPOTScale: 0
   lightmap: 0
   compressionQuality: 50
-  spriteMode: 1
+  spriteMode: 2
   spriteExtrude: 1
   spriteMeshType: 1
   alignment: 0
@@ -99,30 +96,17 @@ TextureImporter:
     ignorePlatformSupport: 0
     androidETC2FallbackOverride: 0
     forceMaximumCompressionQuality_BC6H_BC7: 0
-  - serializedVersion: 4
-    buildTarget: WebGL
-    maxTextureSize: 2048
-    resizeAlgorithm: 0
-    textureFormat: -1
-    textureCompression: 1
-    compressionQuality: 50
-    crunchedCompression: 0
-    allowsAlphaSplitting: 0
-    overridden: 0
-    ignorePlatformSupport: 0
-    androidETC2FallbackOverride: 0
-    forceMaximumCompressionQuality_BC6H_BC7: 0
   spriteSheet:
     serializedVersion: 2
     sprites:
     - serializedVersion: 2
-      name: Char_Customer_Eyes_Scary_0
+      name: Char_Customer_Body_1 1_0
       rect:
         serializedVersion: 2
-        x: 323
-        y: 1192
-        width: 130
-        height: 279
+        x: 0
+        y: 0
+        width: 942
+        height: 1776
       alignment: 0
       pivot: {x: 0, y: 0}
       border: {x: 0, y: 0, z: 0, w: 0}
@@ -131,30 +115,8 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: 15a7fc71d568a9900800000000000000
-      internalID: 692013227144346193
-      vertices: []
-      indices: 
-      edges: []
-      weights: []
-    - serializedVersion: 2
-      name: Char_Customer_Eyes_Scary_1
-      rect:
-        serializedVersion: 2
-        x: 551
-        y: 1195
-        width: 149
-        height: 279
-      alignment: 0
-      pivot: {x: 0, y: 0}
-      border: {x: 0, y: 0, z: 0, w: 0}
-      customData: 
-      outline: []
-      physicsShape: []
-      tessellationDetail: -1
-      bones: []
-      spriteID: 08c77394909f18880800000000000000
-      internalID: -8610327194277282688
+      spriteID: 46b3a3b2fd1a333e0800000000000000
+      internalID: -2075137023412651164
       vertices: []
       indices: 
       edges: []
@@ -163,7 +125,7 @@ TextureImporter:
     customData: 
     physicsShape: []
     bones: []
-    spriteID: 5e97eb03825dee720800000000000000
+    spriteID: 
     internalID: 0
     vertices: []
     indices: 
@@ -173,8 +135,7 @@ TextureImporter:
     spriteCustomMetadata:
       entries: []
     nameFileIdTable:
-      Char_Customer_Eyes_Scary_0: 692013227144346193
-      Char_Customer_Eyes_Scary_1: -8610327194277282688
+      Char_Customer_Body_1 1_0: -2075137023412651164
   mipmapLimitGroupName: 
   pSDRemoveMatte: 0
   userData: 
