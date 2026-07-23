@@ -94,8 +94,7 @@ public class CustomerController : MonoBehaviour
 
     public void SetOrderText(string rawOrderText, int totalDrinks)
     {
-        currentOrderText = text;
-        if (orderTextLabel != null) orderTextLabel.text = text;
+        currentOrderText = rawOrderText;
         TotalDrinksOrdered = totalDrinks;
 
         if (orderTextLabel != null)
