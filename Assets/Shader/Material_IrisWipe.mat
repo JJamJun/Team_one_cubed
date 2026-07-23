@@ -30,7 +30,7 @@ Material:
     m_Ints: []
     m_Floats:
     - _AspectRatio: 1
-    - _Radius: 5
+    - _Radius: 0
     m_Colors:
     - _Center: {r: 0.5, g: 0.5, b: 0, a: 0}
     - _Color: {r: 0, g: 0, b: 0, a: 1}
