@@ -370,17 +370,18 @@ public class CustomerController : MonoBehaviour
                 break;
 
             case CustomerState.Angry:
-                StopBobbing();
-                if (speechBubble != null) speechBubble.SetActive(false);
+                // Inside CustomerController.cs -> ChangeState() -> case CustomerState.Angry:
 
                 visuals?.SetAngry();
                 bool triggerAngryEvent = shouldTriggerAngryEvent;
                 shouldTriggerAngryEvent = true;
                 CustomerAngryReason angryReason = currentAngryReason;
                 currentAngryReason = CustomerAngryReason.None;
+
+                // [CHANGED LINE] Pass the ghostType into TryTriggerAngryEvent
                 bool waitsForAngryEvent = triggerAngryEvent
                     && AngryManager.Instance != null
-                    && AngryManager.Instance.TryTriggerAngryEvent(LeaveScreen);
+                    && AngryManager.Instance.TryTriggerAngryEvent(ghostType, LeaveScreen);
 
                 ApplyAngryReputationChange(angryReason, waitsForAngryEvent);
 

@@ -1,5 +1,4 @@
 using System;
-using System.Collections;
 using DG.Tweening;
 using UnityEngine;
 using UnityEngine.EventSystems;
@@ -17,58 +16,43 @@ public class AngryManager : MonoBehaviour
     [SerializeField, InspectorName("4점대"), Range(0f, 1f)] private float monsterChanceRating4 = 0.2f;
     [SerializeField, InspectorName("5점대"), Range(0f, 1f)] private float monsterChanceRating5 = 0f;
 
-    [Header("Angry References")]
-    [SerializeField] private RectTransform angryObject;
-    [SerializeField] private RectTransform angryPos;
-    [SerializeField] private RectTransform counterPanel;
-    [SerializeField] private RectTransform waypointCounter;
-    [SerializeField] private RectTransform vignetteOverlay;
-    [SerializeField] private Image vignetteOverlayImage;
-    [SerializeField, Range(0f, 1f)] private float vignetteAlpha = 1f;
+    [Header("New Angry Effect References")]
+    [Tooltip("A full-screen black image with a CanvasGroup to handle the lights-out effect.")]
+    [SerializeField] private CanvasGroup blackoutGroup;
+    [Tooltip("The actual jumpscare image you want to show.")]
+    [SerializeField] private RectTransform jumpscareImage;
 
-    [Header("Screen Glitch")]
-    [SerializeField] private RawImage invertOverlay;
-    [SerializeField] private Material invertOverlayMaterial;
-    [SerializeField, Min(0f)] private float maxGlitchInvertedDuration = 0.06f;
-    [SerializeField, Min(0f)] private float maxGlitchNormalDuration = 0.12f;
+    [Header("Effect Settings")]
+    [SerializeField, Tooltip("How long the screen blinks before going completely black.")]
+    private float blinkPhaseDuration = 0.5f;
+    [SerializeField, Tooltip("How many times the lights flicker during the blink phase.")]
+    private int blinkCount = 3;
+    [SerializeField, Tooltip("How long the image vibrates on screen.")]
+    private float vibrateDuration = 2.0f;
+    [SerializeField, Tooltip("How violently the image shakes.")]
+    private float vibrateStrength = 50f;
+    [SerializeField] private int vibrateVibrato = 20;
 
-    [Header("Glitch Sound")]
-    [SerializeField] private AudioClip glitchSfx;
-    [SerializeField] private AudioSource glitchAudioSource;
+    [Header("Audio")]
+    [SerializeField] private AudioClip riserSfx;
 
-    [Header("Camera Approach")]
-    [SerializeField, InspectorName("다가가는 시간"), Min(0.01f)] private float approachDuration = 1.2f;
-    [SerializeField, InspectorName("돌아오는 시간"), Min(0.01f)] private float returnDuration = 0.35f;
-    [SerializeField, InspectorName("다가가는 배율"), Min(1f)] private float approachScale = 1.25f;
-
-    [Header("ANGRY Motion")]
-    [SerializeField, InspectorName("ANGRY가 올라오는 시간"), Min(0.01f)] private float angryRiseDuration = 0.35f;
-    [SerializeField, InspectorName("ANGRY가 올라오는 강도"), Min(0f)] private float angryRiseStrength = 1f;
-    [SerializeField, InspectorName("AngryPos 대기 시간"), Min(0f)] private float angryHoldDuration = 1f;
-    [SerializeField, InspectorName("사라지는 시간"), Min(0.01f)] private float angryHideDuration = 0.25f;
-
-    private Vector2 angryHiddenPosition;
-    private Vector2 originalCounterPanelPosition;
-    private Vector3 originalCounterPanelScale;
-    private Vector3 originalVignetteScale;
     private Sequence angrySequence;
-    private Sequence approachSequence;
-    private Coroutine glitchCoroutine;
     private Tween unlockFailsafe;
-    private bool hasCapturedAngryHiddenPosition;
-    private bool hasCapturedCounterPanelTransform;
-    private bool hasCapturedVignetteScale;
+
     private bool pendingAngryEvent;
     private bool isAngryEventPlaying;
     private bool shouldResumeBgmAfterAngryEvent;
+
     private Action pendingAngryEventCompleted;
     private Action activeAngryEventCompleted;
+    private Vector2 originalJumpscarePos;
 
     public bool HasPendingAngryEvent =>
         pendingAngryEvent
         || isAngryEventPlaying
         || pendingAngryEventCompleted != null
         || activeAngryEventCompleted != null;
+
     public bool IsAngryEventPlaying => isAngryEventPlaying;
 
     private void Awake()
@@ -80,62 +64,47 @@ public class AngryManager : MonoBehaviour
         }
 
         Instance = this;
-        AutoBindReferences();
-        CaptureAngryHiddenPosition();
-        CaptureCounterPanelTransform();
-        CaptureVignetteScale();
-        SetAngryVisible(false);
-        SetVignetteVisible(false);
-        EnsureInvertOverlay();
-        EnsureGlitchAudioSource();
-        SetInvertVisible(false);
+
+        if (jumpscareImage != null)
+        {
+            originalJumpscarePos = jumpscareImage.anchoredPosition;
+            jumpscareImage.gameObject.SetActive(false);
+        }
+
+        if (blackoutGroup != null)
+        {
+            blackoutGroup.alpha = 0f;
+            blackoutGroup.gameObject.SetActive(false);
+            blackoutGroup.blocksRaycasts = false;
+        }
     }
 
     private void OnEnable()
     {
         GameInputBlocker.SetBlocked(false);
         RestoreEventSystem();
+        // Assuming this external UI script still exists to tell us when UI is ready
         UIStationScoller.CounterStationSettled += TryPlayPendingAngryEvent;
     }
 
     private void OnDisable()
     {
         UIStationScoller.CounterStationSettled -= TryPlayPendingAngryEvent;
-
         angrySequence?.Kill();
-        approachSequence?.Kill();
-        StopGlitchSequence();
         unlockFailsafe?.Kill();
-        if (isAngryEventPlaying)
-        {
-            EndAngryEventLock();
-        }
-        else
-        {
-            GameInputBlocker.SetBlocked(false);
-            SetVignetteVisible(false);
-            StopGlitchSequence();
-        }
 
-        if (Instance == this)
-        {
-            Instance = null;
-        }
+        if (isAngryEventPlaying) EndAngryEventLock();
+        else GameInputBlocker.SetBlocked(false);
+
+        if (Instance == this) Instance = null;
     }
 
-    private void OnValidate()
+    // REQUIREMENT: Only trigger if the customer is a normal customer (GhostType.None)
+    public bool TryTriggerAngryEvent(GhostType ghostType, Action onComplete = null)
     {
-        AutoBindReferences();
-        CaptureAngryHiddenPosition();
-        CaptureCounterPanelTransform();
-        CaptureVignetteScale();
-    }
-
-    public bool TryTriggerAngryEvent(Action onComplete = null)
-    {
-        if (UnityEngine.Random.value > GetMonsterChanceForCurrentRating())
+        if (ghostType != GhostType.None || UnityEngine.Random.value > GetMonsterChanceForCurrentRating())
         {
-            return false;
+            return false; // Skip the event entirely
         }
 
         pendingAngryEventCompleted += onComplete;
@@ -147,89 +116,89 @@ public class AngryManager : MonoBehaviour
     private float GetMonsterChanceForCurrentRating()
     {
         if (ReputationRatingManager.Instance != null && !ReputationRatingManager.Instance.IsRatingUnlocked)
-        {
             return 0f;
-        }
 
         int ratingBand = ReputationRatingManager.Instance != null
-            ? ReputationRatingManager.Instance.CurrentAngryEventBand
-            : 0;
+            ? ReputationRatingManager.Instance.CurrentAngryEventBand : 0;
+
         ratingBand = Mathf.Clamp(ratingBand, 0, 5);
 
-        switch (ratingBand)
+        return ratingBand switch
         {
-            case 0: return monsterChanceRating0;
-            case 1: return monsterChanceRating1;
-            case 2: return monsterChanceRating2;
-            case 3: return monsterChanceRating3;
-            case 4: return monsterChanceRating4;
-            case 5: return monsterChanceRating5;
-            default: return 0f;
-        }
+            0 => monsterChanceRating0,
+            1 => monsterChanceRating1,
+            2 => monsterChanceRating2,
+            3 => monsterChanceRating3,
+            4 => monsterChanceRating4,
+            5 => monsterChanceRating5,
+            _ => 0f,
+        };
     }
 
     private void TryPlayPendingAngryEvent()
     {
-        if (!pendingAngryEvent || isAngryEventPlaying)
-        {
-            return;
-        }
+        if (!pendingAngryEvent || isAngryEventPlaying) return;
 
         UIStationScoller stationScroller = UIStationScoller.Instance;
-        if (stationScroller != null && !stationScroller.IsCounterSettled)
-        {
-            return;
-        }
+        if (stationScroller != null && !stationScroller.IsCounterSettled) return;
 
         activeAngryEventCompleted = pendingAngryEventCompleted;
         pendingAngryEventCompleted = null;
         pendingAngryEvent = false;
+
         PlayAngryEvent();
     }
 
     private void PlayAngryEvent()
     {
         BeginAngryEventLock();
-        ScheduleUnlockFailsafe();
-        CaptureVignetteScale();
-        SetVignetteVisible(true);
-        PlayGlitchSequence();
 
-        if (counterPanel == null || waypointCounter == null)
+        // Failsafe in case DOTween bugs out
+        float totalDuration = blinkPhaseDuration + vibrateDuration + 1f;
+        ScheduleUnlockFailsafe(totalDuration);
+
+        // Reset states
+        blackoutGroup.gameObject.SetActive(true);
+        blackoutGroup.alpha = 0f;
+        jumpscareImage.gameObject.SetActive(false);
+        jumpscareImage.anchoredPosition = originalJumpscarePos;
+
+        // Play SFX using existing SoundManager
+        if (riserSfx != null && SoundManager.Instance != null && SoundManager.Instance.SFX != null)
         {
-            PlayAngryMotion(EndAngryEventLock);
-            return;
+            SoundManager.Instance.SFX.PlaySfx(riserSfx);
         }
 
-        CaptureCounterPanelTransform();
-        CaptureVignetteScale();
-        Vector2 approachedPosition = GetCounterPanelApproachPosition();
-        Vector3 approachedScale = originalCounterPanelScale * approachScale;
-        Vector3 approachedVignetteScale = originalVignetteScale * approachScale;
+        angrySequence?.Kill();
+        angrySequence = DOTween.Sequence();
 
-        approachSequence?.Kill();
-        counterPanel.DOKill();
-        counterPanel.anchoredPosition = originalCounterPanelPosition;
-        counterPanel.localScale = originalCounterPanelScale;
-        if (vignetteOverlay != null)
+        // a. Blink a few times (alpha bouncing 0 to 1)
+        float singleFlickerTime = blinkPhaseDuration / (blinkCount * 2);
+        for (int i = 0; i < blinkCount; i++)
         {
-            vignetteOverlay.DOKill();
-            vignetteOverlay.localScale = originalVignetteScale;
+            angrySequence.Append(blackoutGroup.DOFade(1f, singleFlickerTime).SetEase(Ease.Flash));
+            angrySequence.Append(blackoutGroup.DOFade(0f, singleFlickerTime).SetEase(Ease.Flash));
         }
-        approachSequence = DOTween.Sequence().SetTarget(counterPanel);
-        approachSequence.Join(counterPanel.DOAnchorPos(approachedPosition, approachDuration).SetEase(Ease.InOutSine));
-        approachSequence.Join(counterPanel.DOScale(approachedScale, approachDuration).SetEase(Ease.InOutSine));
-        if (vignetteOverlay != null)
+
+        // Final cut to black
+        angrySequence.Append(blackoutGroup.DOFade(1f, 0.05f));
+
+        // b. Show the overlay image while the screen is black
+        angrySequence.AppendCallback(() => jumpscareImage.gameObject.SetActive(true));
+
+        // c. Turn screen back on (remove blackout instantly or quick fade)
+        angrySequence.Append(blackoutGroup.DOFade(0f, 0.1f));
+
+        // d. Vibrate image for a couple of seconds
+        angrySequence.Append(jumpscareImage.DOShakeAnchorPos(vibrateDuration, vibrateStrength, vibrateVibrato));
+
+        // e. Remove all effects and unlock
+        angrySequence.OnComplete(() =>
         {
-            approachSequence.Join(vignetteOverlay.DOScale(approachedVignetteScale, approachDuration).SetEase(Ease.InOutSine));
-        }
-        approachSequence.Append(counterPanel.DOAnchorPos(originalCounterPanelPosition, returnDuration).SetEase(Ease.OutQuad));
-        approachSequence.Join(counterPanel.DOScale(originalCounterPanelScale, returnDuration).SetEase(Ease.OutQuad));
-        if (vignetteOverlay != null)
-        {
-            approachSequence.Join(vignetteOverlay.DOScale(originalVignetteScale, returnDuration).SetEase(Ease.OutQuad));
-        }
-        approachSequence.OnComplete(() => PlayAngryMotion(EndAngryEventLock));
+            jumpscareImage.gameObject.SetActive(false);
+            blackoutGroup.gameObject.SetActive(false);
+            EndAngryEventLock();
+        });
     }
 
     private void BeginAngryEventLock()
@@ -244,71 +213,37 @@ public class AngryManager : MonoBehaviour
 
     private void EndAngryEventLock()
     {
-        if (!isAngryEventPlaying && activeAngryEventCompleted == null)
-        {
-            return;
-        }
+        if (!isAngryEventPlaying && activeAngryEventCompleted == null) return;
 
         unlockFailsafe?.Kill();
         unlockFailsafe = null;
 
         GameInputBlocker.SetBlocked(false);
         RestoreEventSystem();
-        ResumeBgmAfterAngryEvent();
-        SetVignetteVisible(false);
-        StopGlitchSequence();
+
+        if (shouldResumeBgmAfterAngryEvent)
+        {
+            shouldResumeBgmAfterAngryEvent = false;
+            BgmManager.Instance?.ResumePlaylist();
+        }
+
+        // Clean up visual state in case of early interrupt
+        if (blackoutGroup != null) blackoutGroup.gameObject.SetActive(false);
+        if (jumpscareImage != null) jumpscareImage.gameObject.SetActive(false);
+
         isAngryEventPlaying = false;
 
         Action completed = activeAngryEventCompleted;
         activeAngryEventCompleted = null;
         completed?.Invoke();
 
-        if (pendingAngryEvent)
-        {
-            TryPlayPendingAngryEvent();
-        }
+        if (pendingAngryEvent) TryPlayPendingAngryEvent();
     }
 
-    private void PlayAngryMotion(Action onComplete)
-    {
-        if (angryObject == null || angryPos == null)
-        {
-            onComplete?.Invoke();
-            return;
-        }
-
-        CaptureAngryHiddenPosition();
-
-        angrySequence?.Kill();
-        angryObject.DOKill();
-        SetAngryVisible(true);
-        angryObject.anchoredPosition = angryHiddenPosition;
-
-        angrySequence = DOTween.Sequence().SetTarget(angryObject);
-        angrySequence.Append(
-            angryObject.DOAnchorPos(angryPos.anchoredPosition, angryRiseDuration)
-                .SetEase(Ease.OutElastic, angryRiseStrength, 0.3f));
-        angrySequence.AppendInterval(angryHoldDuration);
-        angrySequence.Append(angryObject.DOAnchorPos(angryHiddenPosition, angryHideDuration).SetEase(Ease.InQuad));
-        angrySequence.OnComplete(() =>
-        {
-            SetAngryVisible(false);
-            onComplete?.Invoke();
-        });
-    }
-
-    private void ScheduleUnlockFailsafe()
+    private void ScheduleUnlockFailsafe(float delay)
     {
         unlockFailsafe?.Kill();
-
-        float counterDuration = counterPanel != null && waypointCounter != null
-            ? approachDuration + returnDuration
-            : 0f;
-        float angryDuration = angryRiseDuration + angryHoldDuration + angryHideDuration;
-        float failsafeDelay = counterDuration + angryDuration + 0.5f;
-
-        unlockFailsafe = DOVirtual.DelayedCall(failsafeDelay, EndAngryEventLock)
-            .SetUpdate(true);
+        unlockFailsafe = DOVirtual.DelayedCall(delay, EndAngryEventLock).SetUpdate(true);
     }
 
     private void RestoreEventSystem()
@@ -317,329 +252,6 @@ public class AngryManager : MonoBehaviour
             ? EventSystem.current
             : FindFirstObjectByType<EventSystem>(FindObjectsInactive.Include);
 
-        if (eventSystem != null)
-        {
-            eventSystem.enabled = true;
-        }
-    }
-
-    private void ResumeBgmAfterAngryEvent()
-    {
-        if (!shouldResumeBgmAfterAngryEvent)
-        {
-            return;
-        }
-
-        shouldResumeBgmAfterAngryEvent = false;
-        BgmManager.Instance?.ResumePlaylist();
-    }
-
-    private void CaptureAngryHiddenPosition()
-    {
-        if (hasCapturedAngryHiddenPosition || angryObject == null)
-        {
-            return;
-        }
-
-        angryHiddenPosition = angryObject.anchoredPosition;
-        hasCapturedAngryHiddenPosition = true;
-    }
-
-    private void CaptureCounterPanelTransform()
-    {
-        if (hasCapturedCounterPanelTransform || counterPanel == null)
-        {
-            return;
-        }
-
-        originalCounterPanelPosition = counterPanel.anchoredPosition;
-        originalCounterPanelScale = counterPanel.localScale;
-        hasCapturedCounterPanelTransform = true;
-    }
-
-    private void CaptureVignetteScale()
-    {
-        if (hasCapturedVignetteScale || vignetteOverlay == null)
-        {
-            return;
-        }
-
-        originalVignetteScale = vignetteOverlay.localScale;
-        hasCapturedVignetteScale = true;
-    }
-
-    private Vector2 GetCounterPanelApproachPosition()
-    {
-        RectTransform parentRect = counterPanel.parent as RectTransform;
-        if (parentRect == null)
-        {
-            return originalCounterPanelPosition;
-        }
-
-        Vector2 waypointParentPosition = parentRect.InverseTransformPoint(waypointCounter.position);
-        Vector2 panelParentPosition = parentRect.InverseTransformPoint(counterPanel.position);
-        Vector2 waypointOffsetFromPanel = waypointParentPosition - panelParentPosition;
-        return originalCounterPanelPosition - waypointOffsetFromPanel * approachScale;
-    }
-
-    private void SetAngryVisible(bool isVisible)
-    {
-        if (angryObject != null)
-        {
-            angryObject.gameObject.SetActive(isVisible);
-        }
-    }
-
-    private void SetVignetteVisible(bool isVisible)
-    {
-        if (vignetteOverlay == null)
-        {
-            return;
-        }
-
-        CaptureVignetteScale();
-        vignetteOverlay.gameObject.SetActive(isVisible);
-        vignetteOverlay.localScale = originalVignetteScale;
-
-        if (vignetteOverlayImage != null)
-        {
-            Color color = vignetteOverlayImage.color;
-            color.a = isVisible ? vignetteAlpha : 0f;
-            vignetteOverlayImage.color = color;
-        }
-    }
-
-    private void PlayGlitchSequence()
-    {
-        EnsureInvertOverlay();
-        EnsureGlitchAudioSource();
-        if (invertOverlay == null)
-        {
-            return;
-        }
-
-        StopGlitchSequence();
-        glitchCoroutine = StartCoroutine(GlitchRoutine());
-    }
-
-    private IEnumerator GlitchRoutine()
-    {
-        float totalWindow = Mathf.Max(0f, approachDuration);
-        float[] flashTimes = new float[3];
-        for (int i = 0; i < flashTimes.Length; i++)
-        {
-            flashTimes[i] = UnityEngine.Random.Range(0f, totalWindow);
-        }
-
-        Array.Sort(flashTimes);
-        float elapsed = 0f;
-
-        for (int i = 0; i < flashTimes.Length; i++)
-        {
-            float waitBeforeFlash = Mathf.Max(0f, flashTimes[i] - elapsed);
-            if (waitBeforeFlash > 0f)
-            {
-                yield return new WaitForSecondsRealtime(waitBeforeFlash);
-                elapsed += waitBeforeFlash;
-            }
-
-            float nextBoundary = i < flashTimes.Length - 1 ? flashTimes[i + 1] : totalWindow;
-            float onDuration = Mathf.Min(GetRandomGlitchDuration(maxGlitchInvertedDuration), Mathf.Max(0f, nextBoundary - elapsed));
-            if (onDuration <= 0f)
-            {
-                continue;
-            }
-
-            SetInvertVisible(true);
-            PlayGlitchSfx();
-            yield return new WaitForSecondsRealtime(onDuration);
-            elapsed += onDuration;
-
-            SetInvertVisible(false);
-            StopGlitchSfx();
-
-            if (i < flashTimes.Length - 1)
-            {
-                float offDuration = Mathf.Min(GetRandomGlitchDuration(maxGlitchNormalDuration), Mathf.Max(0f, flashTimes[i + 1] - elapsed));
-                if (offDuration > 0f)
-                {
-                    yield return new WaitForSecondsRealtime(offDuration);
-                    elapsed += offDuration;
-                }
-            }
-        }
-    }
-
-    private float GetRandomGlitchDuration(float maxDuration)
-    {
-        return Mathf.Max(0.01f, UnityEngine.Random.Range(0f, Mathf.Max(0f, maxDuration)));
-    }
-
-    private void StopGlitchSequence()
-    {
-        if (glitchCoroutine != null)
-        {
-            StopCoroutine(glitchCoroutine);
-            glitchCoroutine = null;
-        }
-
-        StopGlitchSfx();
-        SetInvertVisible(false);
-    }
-
-    private void PlayGlitchSfx()
-    {
-        if (glitchAudioSource == null || glitchSfx == null)
-        {
-            return;
-        }
-
-        glitchAudioSource.clip = glitchSfx;
-        glitchAudioSource.loop = true;
-        glitchAudioSource.Play();
-    }
-
-    private void StopGlitchSfx()
-    {
-        if (glitchAudioSource != null)
-        {
-            glitchAudioSource.Stop();
-        }
-    }
-
-    private void SetInvertVisible(bool isVisible)
-    {
-        if (invertOverlay != null)
-        {
-            invertOverlay.gameObject.SetActive(isVisible);
-        }
-    }
-
-    private void EnsureInvertOverlay()
-    {
-        if (invertOverlay != null)
-        {
-            if (invertOverlayMaterial != null)
-            {
-                invertOverlay.material = invertOverlayMaterial;
-            }
-            return;
-        }
-
-        RectTransform parent = vignetteOverlay != null ? vignetteOverlay.parent as RectTransform : null;
-        if (parent == null)
-        {
-            Canvas canvas = FindFirstObjectByType<Canvas>(FindObjectsInactive.Include);
-            parent = canvas != null ? canvas.transform as RectTransform : null;
-        }
-
-        if (parent == null)
-        {
-            return;
-        }
-
-        GameObject overlayObject = new GameObject("InvertOverlay_for_ANGRY", typeof(RectTransform), typeof(RawImage));
-        RectTransform overlayRect = overlayObject.transform as RectTransform;
-        overlayRect.SetParent(parent, false);
-        overlayRect.anchorMin = Vector2.zero;
-        overlayRect.anchorMax = Vector2.one;
-        overlayRect.offsetMin = Vector2.zero;
-        overlayRect.offsetMax = Vector2.zero;
-        overlayRect.localScale = Vector3.one;
-        overlayRect.SetAsLastSibling();
-
-        invertOverlay = overlayObject.GetComponent<RawImage>();
-        invertOverlay.raycastTarget = false;
-        invertOverlay.color = Color.white;
-
-        if (invertOverlayMaterial == null)
-        {
-            Shader shader = Shader.Find("UI/ScreenInvertOverlay");
-            if (shader != null)
-            {
-                invertOverlayMaterial = new Material(shader);
-            }
-        }
-
-        if (invertOverlayMaterial != null)
-        {
-            invertOverlay.material = invertOverlayMaterial;
-        }
-
-        SetInvertVisible(false);
-    }
-
-    private void EnsureGlitchAudioSource()
-    {
-        if (glitchAudioSource == null)
-        {
-            glitchAudioSource = GetComponent<AudioSource>();
-        }
-
-        if (glitchAudioSource == null)
-        {
-            glitchAudioSource = gameObject.AddComponent<AudioSource>();
-        }
-
-        glitchAudioSource.playOnAwake = false;
-        glitchAudioSource.loop = true;
-    }
-
-    private void AutoBindReferences()
-    {
-        if (angryObject == null)
-        {
-            angryObject = FindSceneRectTransform("ANGRY");
-        }
-
-        if (angryPos == null)
-        {
-            angryPos = FindSceneRectTransform("angryPos");
-        }
-
-        if (counterPanel == null)
-        {
-            counterPanel = FindSceneRectTransform("CounterPanel");
-        }
-
-        if (waypointCounter == null)
-        {
-            waypointCounter = FindSceneRectTransform("Waypoint_Counter");
-        }
-
-        if (vignetteOverlay == null)
-        {
-            vignetteOverlay = FindSceneRectTransform("VignetteOverlay_for_ANGRY");
-        }
-
-        if (vignetteOverlayImage == null && vignetteOverlay != null)
-        {
-            vignetteOverlayImage = vignetteOverlay.GetComponent<Image>();
-        }
-    }
-
-    private static RectTransform FindSceneRectTransform(string targetName)
-    {
-        Transform target = FindSceneTransform(targetName);
-        return target != null ? target as RectTransform : null;
-    }
-
-    private static Transform FindSceneTransform(string targetName)
-    {
-        Transform[] transforms = Resources.FindObjectsOfTypeAll<Transform>();
-        for (int i = 0; i < transforms.Length; i++)
-        {
-            Transform candidate = transforms[i];
-            if (candidate == null
-                || candidate.name != targetName
-                || !candidate.gameObject.scene.IsValid())
-            {
-                continue;
-            }
-
-            return candidate;
-        }
-
-        return null;
+        if (eventSystem != null) eventSystem.enabled = true;
     }
 }
