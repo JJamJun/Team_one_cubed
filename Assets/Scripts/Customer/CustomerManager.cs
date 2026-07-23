@@ -7,7 +7,6 @@ using TMPro;
 
 public class CustomerManager : MonoBehaviour
 {
-    public static event Action WrongOrderSubmitted;
     [Header("Prefabs & Containers")]
     [SerializeField] private GameObject normalCustomerPrefab;
     [SerializeField] private GameObject[] ghostCustomerPrefabs;
@@ -60,14 +59,12 @@ public class CustomerManager : MonoBehaviour
 
     private void OnEnable()
     {
-        CounterOrderController.GetSubmittedOrderError = GetSubmittedCounterOrderError;
         CounterOrderController.OnReceiptPrinted += HandleReceiptPrinted;
         Receipt.ReceiptSlotEmptied += HandleReceiptEmptied;
     }
 
     private void OnDisable()
     {
-        CounterOrderController.GetSubmittedOrderError -= GetSubmittedCounterOrderError;
         CounterOrderController.OnReceiptPrinted -= HandleReceiptPrinted;
         Receipt.ReceiptSlotEmptied -= HandleReceiptEmptied;
     }
@@ -80,24 +77,6 @@ public class CustomerManager : MonoBehaviour
     }
 
     // --- Core Logic ---
-
-    private string GetSubmittedCounterOrderError(string submittedOrderText)
-    {
-        if (currentCustomerAtCounter == null || currentCustomerAtCounter.CurrentState != CustomerState.Ordering)
-        {
-            return " \uD604\uC7AC \uC190\uB2D8\uC774 \uC5C6\uC2B5\uB2C8\uB2E4! ";
-        }
-
-        if (DoOrdersMatch(currentCustomerAtCounter.OrderText, submittedOrderText))
-        {
-            return null;
-        }
-
-        Debug.Log($"{nameof(CustomerManager)}: submitted order does not match customer order.\nCustomer:\n{currentCustomerAtCounter.OrderText}\nSubmitted:\n{submittedOrderText}");
-        WrongOrderSubmitted?.Invoke();
-        currentCustomerAtCounter.OrderFailed();
-        return string.Empty;
-    }
 
     private void HandleReceiptPrinted(int slotIndex)
     {
@@ -112,7 +91,7 @@ public class CustomerManager : MonoBehaviour
         }
     }
 
-    private void HandleReceiptEmptied(int slotIndex, bool isSuccess, string receiptText, bool completedWithinHalfTime)
+    private void HandleReceiptEmptied(int slotIndex, bool isSuccess, string receiptText)
     {
         if (waitingCustomers.TryGetValue(slotIndex, out CustomerController customer))
         {
@@ -123,7 +102,6 @@ public class CustomerManager : MonoBehaviour
                     customer.OrderFulfilled();
 
                     GameStatsManager.Instance?.RegisterCustomerSuccess(receiptText, customer.TotalDrinksOrdered);
-                    ReputationRatingManager.Instance?.RegisterReceiptSuccess(customer.TotalDrinksOrdered, completedWithinHalfTime, customer.CustomerGhostType != GhostType.None);
 
                     if (stationScroller != null)
                     {
@@ -138,72 +116,6 @@ public class CustomerManager : MonoBehaviour
 
             waitingCustomers.Remove(slotIndex);
         }
-    }
-
-    private bool DoOrdersMatch(string expectedOrderText, string submittedOrderText)
-    {
-        Dictionary<string, int> expectedOrder = ParseOrderText(expectedOrderText);
-        Dictionary<string, int> submittedOrder = ParseOrderText(submittedOrderText);
-        if (expectedOrder.Count != submittedOrder.Count)
-        {
-            return false;
-        }
-
-        foreach (KeyValuePair<string, int> expectedLine in expectedOrder)
-        {
-            if (!submittedOrder.TryGetValue(expectedLine.Key, out int submittedCount)
-                || submittedCount != expectedLine.Value)
-            {
-                return false;
-            }
-        }
-
-        return true;
-    }
-
-    private Dictionary<string, int> ParseOrderText(string orderText)
-    {
-        Dictionary<string, int> order = new Dictionary<string, int>();
-        if (string.IsNullOrWhiteSpace(orderText))
-        {
-            return order;
-        }
-
-        string[] lines = orderText.Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries);
-        for (int i = 0; i < lines.Length; i++)
-        {
-            string line = lines[i].Trim();
-            int countSuffixIndex = line.LastIndexOf("\uC794", StringComparison.Ordinal);
-            if (countSuffixIndex <= 0)
-            {
-                continue;
-            }
-
-            string beforeSuffix = line.Substring(0, countSuffixIndex).Trim();
-            int countStartIndex = beforeSuffix.LastIndexOf(' ');
-            if (countStartIndex <= 0)
-            {
-                continue;
-            }
-
-            string menuName = beforeSuffix.Substring(0, countStartIndex).Trim();
-            string countText = beforeSuffix.Substring(countStartIndex + 1).Trim();
-            if (string.IsNullOrEmpty(menuName) || !int.TryParse(countText, out int count))
-            {
-                continue;
-            }
-
-            if (order.ContainsKey(menuName))
-            {
-                order[menuName] += count;
-            }
-            else
-            {
-                order[menuName] = count;
-            }
-        }
-
-        return order;
     }
 
     private void HandleCustomerLeft(CustomerController customer)
@@ -236,7 +148,6 @@ public class CustomerManager : MonoBehaviour
     private void ManageSpawning()
     {
         if (isCounterOccupied || availableMenus.Count == 0) return;
-        if (IsAngryEventBlockingSpawn()) return;
 
         spawnTimer -= Time.deltaTime;
         if (spawnTimer <= 0f)
@@ -256,12 +167,6 @@ public class CustomerManager : MonoBehaviour
             currentCustomerAtCounter = null;
             ResetSpawnTimer();
         }
-    }
-
-    private bool IsAngryEventBlockingSpawn()
-    {
-        return AngryManager.Instance != null
-            && AngryManager.Instance.HasPendingAngryEvent;
     }
 
     private void SpawnCustomer()

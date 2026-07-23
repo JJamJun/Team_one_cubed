@@ -19,29 +19,10 @@ public class NormalCustomerVisuals : MonoBehaviour, ICustomerVisuals
     [Header("Mood Overrides")]
     [SerializeField] private Sprite angryEyes;
     [SerializeField] private Sprite angryMouth;
-    [SerializeField] private Sprite scaryEyes;
-    [SerializeField] private Sprite scaryMouth;
-
-    private Sprite defaultEyes;
-    private Sprite defaultMouth;
 
     private void Start()
     {
         RandomizeAppearance();
-        CaptureDefaultMoodSprites();
-    }
-
-    private void CaptureDefaultMoodSprites()
-    {
-        if (eyesImage != null)
-        {
-            defaultEyes = eyesImage.sprite;
-        }
-
-        if (mouthImage != null)
-        {
-            defaultMouth = mouthImage.sprite;
-        }
     }
 
     private void RandomizeAppearance()
@@ -61,46 +42,18 @@ public class NormalCustomerVisuals : MonoBehaviour, ICustomerVisuals
 
     public void SetNeutral()
     {
-        RestoreDefaultMoodSprites();
+        //blank for now, may need to implement later 
     }
 
     public void SetHappy()
     {
-        RestoreDefaultMoodSprites();
+        //blank
     }
 
     public void SetAngry()
     {
-        if (scaryEyes != null && eyesImage != null)
-        {
-            eyesImage.sprite = scaryEyes;
-        }
-        else if (angryEyes != null && eyesImage != null)
-        {
-            eyesImage.sprite = angryEyes;
-        }
-
-        if (scaryMouth != null && mouthImage != null)
-        {
-            mouthImage.sprite = scaryMouth;
-        }
-        else if (angryMouth != null && mouthImage != null)
-        {
-            mouthImage.sprite = angryMouth;
-        }
-    }
-
-    private void RestoreDefaultMoodSprites()
-    {
-        if (eyesImage != null && defaultEyes != null)
-        {
-            eyesImage.sprite = defaultEyes;
-        }
-
-        if (mouthImage != null && defaultMouth != null)
-        {
-            mouthImage.sprite = defaultMouth;
-        }
+        if (angryEyes != null && eyesImage != null) eyesImage.sprite = angryEyes;
+        if (angryMouth != null && mouthImage != null) mouthImage.sprite = angryMouth;
     }
 
     public void SetVisible(bool isVisible)

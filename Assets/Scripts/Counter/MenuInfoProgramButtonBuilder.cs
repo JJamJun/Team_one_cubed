@@ -2,16 +2,13 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 using UnityEngine;
-using UnityEngine.UI;
 
 public class MenuInfoProgramButtonBuilder : MonoBehaviour
 {
     [SerializeField] private string menuInfoResourcePath = "menu_info";
     [SerializeField] private GameObject buttonPrefab;
     [SerializeField] private CounterOrderController orderController;
-    [SerializeField] private RectTransform contentRoot;
-    [SerializeField] private Vector2 buttonSize = new Vector2(90f, 90f);
-    [SerializeField] private float verticalSpacing = 8f;
+    [SerializeField] private Vector2 spacing = new Vector2(18f, 14f);
     [SerializeField] private RectOffset padding = new RectOffset(0, 0, 0, 0);
     [SerializeField] private string generatedButtonPrefix = "ProgramMenuButton_";
 
@@ -30,24 +27,21 @@ public class MenuInfoProgramButtonBuilder : MonoBehaviour
 
         if (orderController == null)
         {
-            orderController = FindCounterOrderController();
+            orderController = FindFirstObjectByType<CounterOrderController>();
         }
 
-        RectTransform targetRoot = GetContentRoot();
         List<string> menuNames = LoadMenuNames();
-        ClearGeneratedButtons(targetRoot);
+        ClearGeneratedButtons();
 
         for (int i = 0; i < menuNames.Count; i++)
         {
-            CreateButton(targetRoot, menuNames[i], i);
+            CreateButton(menuNames[i], i);
         }
-
-        UpdateContentSize(targetRoot, menuNames.Count);
     }
 
-    private void CreateButton(RectTransform targetRoot, string menuName, int index)
+    private void CreateButton(string menuName, int index)
     {
-        GameObject buttonObject = Instantiate(buttonPrefab, targetRoot);
+        GameObject buttonObject = Instantiate(buttonPrefab, transform);
         buttonObject.name = $"{generatedButtonPrefix}{index}_{menuName}";
 
         RectTransform buttonRect = buttonObject.transform as RectTransform;
@@ -57,106 +51,53 @@ public class MenuInfoProgramButtonBuilder : MonoBehaviour
             buttonRect.anchorMax = new Vector2(0f, 1f);
             buttonRect.pivot = new Vector2(0f, 1f);
             buttonRect.localScale = Vector3.one;
-            buttonRect.SetSizeWithCurrentAnchors(RectTransform.Axis.Horizontal, buttonSize.x);
-            buttonRect.SetSizeWithCurrentAnchors(RectTransform.Axis.Vertical, buttonSize.y);
 
-            int columns = GetColumnCount(targetRoot);
-            Vector2Int gridPosition = new Vector2Int(index % columns, index / columns);
-            buttonRect.anchoredPosition = GetAnchoredPosition(targetRoot, gridPosition, columns);
+            Vector2 prefabSize = GetPrefabButtonSize(buttonRect);
+            Vector2Int gridPosition = GetGridPosition(index, prefabSize);
+            buttonRect.anchoredPosition = GetAnchoredPosition(gridPosition, prefabSize);
         }
 
         CounterMenuButton menuButton = buttonObject.GetComponent<CounterMenuButton>();
         if (menuButton != null)
         {
             menuButton.Initialize(orderController, menuName);
-        }
-        else
-        {
-            Debug.LogWarning($"{nameof(MenuInfoProgramButtonBuilder)}: Generated prefab '{buttonPrefab.name}' does not have a {nameof(CounterMenuButton)} component.");
-        }
-
-        Button button = buttonObject.GetComponent<Button>();
-        if (button == null)
-        {
-            Debug.LogWarning($"{nameof(MenuInfoProgramButtonBuilder)}: Generated prefab '{buttonPrefab.name}' does not have a Button component.");
             return;
         }
 
-        CounterOrderController targetOrderController = orderController;
-        string targetMenuName = menuName;
-        button.onClick.RemoveAllListeners();
-        button.onClick.AddListener(() =>
-        {
-            if (targetOrderController == null)
-            {
-                targetOrderController = FindCounterOrderController();
-            }
-
-            if (targetOrderController != null)
-            {
-                targetOrderController.RegisterMenuClick(targetMenuName);
-            }
-        });
+        Debug.LogWarning($"{nameof(MenuInfoProgramButtonBuilder)}: Generated prefab '{buttonPrefab.name}' does not have a {nameof(CounterMenuButton)} component.");
     }
 
-    private RectTransform GetContentRoot()
+    private Vector2 GetPrefabButtonSize(RectTransform buttonRect)
     {
-        if (contentRoot != null)
+        Vector2 size = buttonRect.rect.size;
+        if (size.x <= 0f || size.y <= 0f)
         {
-            return contentRoot;
+            size = buttonRect.sizeDelta;
         }
 
-        ScrollRect scrollRect = FindScrollRectByName("POS_Buttons");
-        if (scrollRect != null && scrollRect.content != null)
-        {
-            contentRoot = scrollRect.content;
-            return contentRoot;
-        }
-
-        contentRoot = transform as RectTransform;
-        return contentRoot;
+        return new Vector2(Mathf.Max(1f, size.x), Mathf.Max(1f, size.y));
     }
 
-    private int GetColumnCount(RectTransform targetRoot)
+    private Vector2Int GetGridPosition(int index, Vector2 buttonSize)
     {
-        float availableWidth = targetRoot != null
-            ? Mathf.Max(0f, targetRoot.rect.width - padding.left - padding.right)
+        RectTransform rootRect = transform as RectTransform;
+        float availableWidth = rootRect != null
+            ? Mathf.Max(0f, rootRect.rect.width - padding.left - padding.right)
             : buttonSize.x;
 
-        return Mathf.Max(1, Mathf.FloorToInt(availableWidth / Mathf.Max(1f, buttonSize.x)));
+        float strideX = buttonSize.x + spacing.x;
+        int columns = strideX > 0f
+            ? Mathf.Max(1, Mathf.FloorToInt((availableWidth + spacing.x) / strideX))
+            : 1;
+
+        return new Vector2Int(index % columns, index / columns);
     }
 
-    private Vector2 GetAnchoredPosition(RectTransform targetRoot, Vector2Int gridPosition, int columns)
+    private Vector2 GetAnchoredPosition(Vector2Int gridPosition, Vector2 buttonSize)
     {
-        float horizontalSpacing = GetAutoHorizontalSpacing(targetRoot, columns);
         return new Vector2(
-            padding.left + gridPosition.x * (buttonSize.x + horizontalSpacing),
-            -padding.top - gridPosition.y * (buttonSize.y + verticalSpacing));
-    }
-
-    private float GetAutoHorizontalSpacing(RectTransform targetRoot, int columns)
-    {
-        if (columns <= 1 || targetRoot == null)
-        {
-            return 0f;
-        }
-
-        float availableWidth = Mathf.Max(0f, targetRoot.rect.width - padding.left - padding.right);
-        float remainingWidth = Mathf.Max(0f, availableWidth - columns * buttonSize.x);
-        return remainingWidth / (columns - 1);
-    }
-
-    private void UpdateContentSize(RectTransform targetRoot, int buttonCount)
-    {
-        if (targetRoot == null || buttonCount <= 0)
-        {
-            return;
-        }
-
-        int columns = GetColumnCount(targetRoot);
-        int lastRow = (buttonCount - 1) / columns;
-        float targetHeight = padding.top + padding.bottom + (lastRow + 1) * buttonSize.y + lastRow * verticalSpacing;
-        targetRoot.SetSizeWithCurrentAnchors(RectTransform.Axis.Vertical, Mathf.Max(targetRoot.rect.height, targetHeight));
+            padding.left + gridPosition.x * (buttonSize.x + spacing.x),
+            -padding.top - gridPosition.y * (buttonSize.y + spacing.y));
     }
 
     private List<string> LoadMenuNames()
@@ -201,16 +142,11 @@ public class MenuInfoProgramButtonBuilder : MonoBehaviour
         return menuNames;
     }
 
-    private void ClearGeneratedButtons(RectTransform targetRoot)
+    private void ClearGeneratedButtons()
     {
-        if (targetRoot == null)
+        for (int i = transform.childCount - 1; i >= 0; i--)
         {
-            return;
-        }
-
-        for (int i = targetRoot.childCount - 1; i >= 0; i--)
-        {
-            Transform child = targetRoot.GetChild(i);
+            Transform child = transform.GetChild(i);
             if (child.name.StartsWith(generatedButtonPrefix, StringComparison.Ordinal))
             {
                 Destroy(child.gameObject);
@@ -270,41 +206,5 @@ public class MenuInfoProgramButtonBuilder : MonoBehaviour
 
         cells.Add(cell.ToString());
         return cells;
-    }
-
-    private static ScrollRect FindScrollRectByName(string targetName)
-    {
-        ScrollRect[] scrollRects = Resources.FindObjectsOfTypeAll<ScrollRect>();
-        for (int i = 0; i < scrollRects.Length; i++)
-        {
-            ScrollRect scrollRect = scrollRects[i];
-            if (scrollRect.gameObject.scene.IsValid() && scrollRect.name == targetName)
-            {
-                return scrollRect;
-            }
-        }
-
-        return null;
-    }
-
-    private static CounterOrderController FindCounterOrderController()
-    {
-        CounterOrderController activeController = FindFirstObjectByType<CounterOrderController>();
-        if (activeController != null)
-        {
-            return activeController;
-        }
-
-        CounterOrderController[] controllers = Resources.FindObjectsOfTypeAll<CounterOrderController>();
-        for (int i = 0; i < controllers.Length; i++)
-        {
-            CounterOrderController controller = controllers[i];
-            if (controller.gameObject.scene.IsValid())
-            {
-                return controller;
-            }
-        }
-
-        return null;
     }
 }

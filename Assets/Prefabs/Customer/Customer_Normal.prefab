@@ -827,8 +827,6 @@ MonoBehaviour:
   - {fileID: 21300000, guid: 67f17f23566d07049b28b1286d27218a, type: 3}
   angryEyes: {fileID: 21300000, guid: 5b4ae620ce167a74a8fcfdeb703daace, type: 3}
   angryMouth: {fileID: 21300000, guid: 3d6495b4fb18b9b40a22b72e6e0068fd, type: 3}
-  scaryEyes: {fileID: 692013227144346193, guid: c3e1d4146769b1d4087ce2b61ec362e6, type: 3}
-  scaryMouth: {fileID: 3084107057218272383, guid: 841ba68a136aa4b418d1b9c6f2ef4501, type: 3}
 --- !u!1 &9108643113957960241
 GameObject:
   m_ObjectHideFlags: 0
