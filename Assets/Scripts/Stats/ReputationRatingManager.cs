@@ -288,7 +288,7 @@ public class ReputationRatingManager : MonoBehaviour
     {
         if (ratingValueText != null)
         {
-            ratingValueText.text = Mathf.RoundToInt(currentScore).ToString();
+            ratingValueText.text = CurrentStarRating.ToString("0.0");
         }
 
         UpdateRatingValuePosition();

@@ -52,6 +52,8 @@ public class GameStatsManager : MonoBehaviour
     private float roundTimeRemaining;
     private bool isRoundActive;
 
+    public int CurrentCoin => saveData != null ? saveData.coin : 0;
+
     private void Awake()
     {
         if (Instance != null && Instance != this)
@@ -115,6 +117,32 @@ public class GameStatsManager : MonoBehaviour
         SyncLegacyMoneyField();
 
         SaveData();
+        UpdateUI();
+    }
+
+    public bool TrySpendCoins(int amount)
+    {
+        amount = Mathf.Max(0, amount);
+        if (saveData == null)
+        {
+            LoadData();
+        }
+
+        if (saveData.coin < amount)
+        {
+            return false;
+        }
+
+        saveData.coin -= amount;
+        SyncLegacyMoneyField();
+        SaveData();
+        UpdateUI();
+        return true;
+    }
+
+    public void RefreshWalletFromDisk()
+    {
+        LoadData();
         UpdateUI();
     }
 

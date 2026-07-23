@@ -599,7 +599,7 @@ public class CustomerManager : MonoBehaviour
 
         if (ReputationRatingManager.Instance == null || !ReputationRatingManager.Instance.IsRatingUnlocked)
         {
-            return ghostChance;
+            return 0f;
         }
 
         switch (ReputationRatingManager.Instance.CurrentAngryEventBand)
