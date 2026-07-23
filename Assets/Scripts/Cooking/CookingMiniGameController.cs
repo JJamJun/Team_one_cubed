@@ -97,6 +97,7 @@ public class CookingMiniGameController : MonoBehaviour
     private bool hasCapturedArrowCmdPosition;
     private bool arrowCmdMeshWasShaken;
     private bool lastVirginGhostBuffActive;
+    private int nextCookingComboNumber = 1;
 
     private void Awake()
     {
@@ -149,6 +150,8 @@ public class CookingMiniGameController : MonoBehaviour
         if (pressedCommand.Value == currentCommand[inputIndex])
         {
             wrongIndex = -1;
+            PlayCookingComboSfx(nextCookingComboNumber);
+            nextCookingComboNumber++;
             inputIndex++;
 
             if (inputIndex >= currentCommand.Length)
@@ -163,11 +166,12 @@ public class CookingMiniGameController : MonoBehaviour
         }
         else
         {
-            if (BuffDebuffManager.DokkaebiBuffActive && dokkaebiShieldAvailable)
+            if (BuffDebuffManager.CommandMistakeShieldBuffActive && dokkaebiShieldAvailable)
             {
                 dokkaebiShieldAvailable = false;
                 dokkaebiShieldedIndex = inputIndex;
                 wrongIndex = -1;
+                ResetCookingComboSfx();
                 inputIndex++;
 
                 if (inputIndex >= currentCommand.Length)
@@ -177,15 +181,16 @@ public class CookingMiniGameController : MonoBehaviour
                     timerRunning = false;
                     escapeExitEnabled = true;
                     ApplyCookingResult(true);
-                    Debug.Log($"Cooking command complete with Dokkaebi shield: {currentMenuName}");
+                    Debug.Log($"Cooking command complete with command shield: {currentMenuName}");
                 }
 
                 RenderArrowCommand();
-                Debug.Log($"Dokkaebi shield blocked wrong input: {currentMenuName}");
+                Debug.Log($"Command shield blocked wrong input: {currentMenuName}");
                 return;
             }
 
             wrongIndex = inputIndex;
+            ResetCookingComboSfx();
             arrowInputEnabled = false;
             timerRunning = false;
             escapeExitEnabled = true;
@@ -194,6 +199,21 @@ public class CookingMiniGameController : MonoBehaviour
         }
 
         RenderArrowCommand();
+    }
+
+    private void PlayCookingComboSfx(int comboNumber)
+    {
+        if (SoundManager.Instance == null || SoundManager.Instance.SFX == null)
+        {
+            return;
+        }
+
+        SoundManager.Instance.SFX.PlayCookingCombo(comboNumber);
+    }
+
+    private void ResetCookingComboSfx()
+    {
+        nextCookingComboNumber = 1;
     }
 
     public bool TryStartCooking(CupDragController cup)
@@ -229,8 +249,9 @@ public class CookingMiniGameController : MonoBehaviour
         lastVirginGhostBuffActive = BuffDebuffManager.VirginGhostBuffActive;
         currentCommand = BuffDebuffManager.ApplyVirginGhostCommandReduction(currentBaseCommand);
         inputIndex = 0;
+        ResetCookingComboSfx();
         wrongIndex = -1;
-        dokkaebiShieldAvailable = BuffDebuffManager.DokkaebiBuffActive;
+        dokkaebiShieldAvailable = BuffDebuffManager.CommandMistakeShieldBuffActive;
         dokkaebiShieldedIndex = -1;
         commandComplete = string.IsNullOrEmpty(currentCommand);
         arrowInputEnabled = !commandComplete;
@@ -272,6 +293,7 @@ public class CookingMiniGameController : MonoBehaviour
         currentBaseCommand = string.Empty;
         currentCommand = string.Empty;
         inputIndex = 0;
+        ResetCookingComboSfx();
         wrongIndex = -1;
         commandComplete = false;
         arrowInputEnabled = false;
@@ -660,7 +682,7 @@ public class CookingMiniGameController : MonoBehaviour
             Color color = pendingColor;
             if (i == dokkaebiShieldedIndex)
             {
-                color = BuffDebuffManager.DokkaebiShieldTextColor;
+                color = BuffDebuffManager.CommandMistakeShieldTextColor;
             }
             else if (i < inputIndex)
             {

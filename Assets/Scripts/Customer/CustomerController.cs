@@ -19,6 +19,8 @@ public enum CustomerState
 public class CustomerController : MonoBehaviour
 {
     public event Action<CustomerController> OnCustomerLeft;
+    public static event Action CustomerBellDinged;
+    public static event Action CustomerPatienceExpired;
 
     [Header("Customer Identity")]
     [SerializeField] private GhostType ghostType = GhostType.None;
@@ -45,15 +47,15 @@ public class CustomerController : MonoBehaviour
     [SerializeField] private float maxPatience = 15f;
 
     [Header("Dialogue Settings")]
-    [SerializeField] private string[] successDialogues = { "°¨»çÇÕ´Ï´Ù!", "°¨»çÇÕ´Ï´Ù~", "ÁÁÀº ÇÏ·ç µÇ¼¼¿ä~!" };
+    [SerializeField] private string[] successDialogues = { "ê°ì‚¬í•©ë‹ˆë‹¤!", "ê°ì‚¬í•©ë‹ˆë‹¤~", "ì¢‹ì€ í•˜ë£¨ ë˜ì„¸ìš”~!" };
     [SerializeField] private float typeSpeed = 0.05f;
     [SerializeField] private float readDelayAfterTyping = 1.0f;
 
     [Header("Order Dialogue Formats (Keep array lengths matched!)")]
     [SerializeField] private string[] sentenceStarters = { "" };
     [SerializeField] private string[] separators = { ", " };
-    [SerializeField] private string[] lastSeparators = { "ÀÌ¶û " };
-    [SerializeField] private string[] sentenceClosers = { " ÁÖ¼¼¿ä." };
+    [SerializeField] private string[] lastSeparators = { "ì´ëž‘ " };
+    [SerializeField] private string[] sentenceClosers = { " ì£¼ì„¸ìš”." };
 
     private CustomerState currentState;
     private float currentPatience;
@@ -63,11 +65,15 @@ public class CustomerController : MonoBehaviour
     private float currentFootstepVolume = 1f;
     private bool hasPendingDrinkResult;
     private bool pendingDrinkSucceeded;
+    private bool pendingDrinkShouldTriggerAngryEvent;
+    private bool shouldTriggerAngryEvent = true;
+    private string currentOrderText = string.Empty;
 
     public CustomerState CurrentState => currentState;
     public GhostType CustomerGhostType => ghostType;
     public bool IsHappy { get; private set; }
     public int TotalDrinksOrdered { get; private set; }
+    public string OrderText => currentOrderText;
 
     private void Awake()
     {
@@ -88,6 +94,8 @@ public class CustomerController : MonoBehaviour
 
     public void SetOrderText(string rawOrderText, int totalDrinks)
     {
+        currentOrderText = text;
+        if (orderTextLabel != null) orderTextLabel.text = text;
         TotalDrinksOrdered = totalDrinks;
 
         if (orderTextLabel != null)
@@ -158,6 +166,8 @@ public class CustomerController : MonoBehaviour
         IsHappy = false;
         hasPendingDrinkResult = false;
         pendingDrinkSucceeded = false;
+        pendingDrinkShouldTriggerAngryEvent = false;
+        shouldTriggerAngryEvent = true;
         currentFootstepVolume = 1f;
         visuals?.SetNeutral();
         currentPatience = maxPatience;
@@ -165,6 +175,7 @@ public class CustomerController : MonoBehaviour
         if (SoundManager.Instance != null && SoundManager.Instance.SFX != null)
         {
             SoundManager.Instance.SFX.PlayBell();
+            CustomerBellDinged?.Invoke();
         }
 
         ChangeState(CustomerState.Arriving);
@@ -183,7 +194,12 @@ public class CustomerController : MonoBehaviour
         currentPatience -= Time.deltaTime;
 
         if (patienceMeterFill != null) patienceMeterFill.fillAmount = Mathf.Clamp01(currentPatience / maxPatience);
-        if (currentPatience <= 0f) ChangeState(CustomerState.Angry);
+        if (currentPatience <= 0f)
+        {
+            CustomerPatienceExpired?.Invoke();
+            shouldTriggerAngryEvent = true;
+            ChangeState(CustomerState.Angry);
+        }
     }
 
     public void AcceptOrder()
@@ -202,20 +218,23 @@ public class CustomerController : MonoBehaviour
         {
             hasPendingDrinkResult = true;
             pendingDrinkSucceeded = true;
+            pendingDrinkShouldTriggerAngryEvent = false;
         }
     }
 
     public void OrderFailed()
     {
-        if (currentState == CustomerState.WaitingForDrink)
+        if (currentState == CustomerState.Ordering || currentState == CustomerState.WaitingForDrink)
         {
             IsHappy = false;
+            shouldTriggerAngryEvent = currentState == CustomerState.Ordering;
             ChangeState(CustomerState.Angry);
         }
         else if (currentState == CustomerState.MovingToPickup)
         {
             hasPendingDrinkResult = true;
             pendingDrinkSucceeded = false;
+            pendingDrinkShouldTriggerAngryEvent = false;
         }
     }
 
@@ -261,8 +280,11 @@ public class CustomerController : MonoBehaviour
                 if (hasPendingDrinkResult)
                 {
                     bool succeeded = pendingDrinkSucceeded;
+                    bool pendingTriggerAngryEvent = pendingDrinkShouldTriggerAngryEvent;
                     hasPendingDrinkResult = false;
                     pendingDrinkSucceeded = false;
+                    pendingDrinkShouldTriggerAngryEvent = false;
+                    shouldTriggerAngryEvent = succeeded || pendingTriggerAngryEvent;
                     ChangeState(succeeded ? CustomerState.Completed : CustomerState.Angry);
                     break;
                 }
@@ -288,7 +310,16 @@ public class CustomerController : MonoBehaviour
                 if (speechBubble != null) speechBubble.SetActive(false);
 
                 visuals?.SetAngry();
-                DOVirtual.DelayedCall(1f, LeaveScreen);
+                bool triggerAngryEvent = shouldTriggerAngryEvent;
+                shouldTriggerAngryEvent = true;
+                bool waitsForAngryEvent = triggerAngryEvent
+                    && AngryManager.Instance != null
+                    && AngryManager.Instance.TryTriggerAngryEvent(LeaveScreen);
+
+                if (!waitsForAngryEvent)
+                {
+                    DOVirtual.DelayedCall(1f, LeaveScreen);
+                }
                 break;
 
             case CustomerState.Leaving:
@@ -370,7 +401,7 @@ public class CustomerController : MonoBehaviour
     [ContextMenu("Test Order Formatting")]
     private void TestOrderFormatting()
     {
-        string dummyOrder = "<À½·á1> 1ÀÜ\n<À½·á2> 2ÀÜ\n<À½·á3> 3ÀÜ";
+        string dummyOrder = "<ìŒë£Œ1> 1ìž”\n<ìŒë£Œ2> 2ìž”\n<ìŒë£Œ3> 3ìž”";
         string result = FormatOrderString(dummyOrder);
 
         Debug.Log($"<b>[{gameObject.name} - {ghostType}]</b> Test Result:\n<color=yellow>{result}</color>");

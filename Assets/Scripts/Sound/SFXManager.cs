@@ -14,6 +14,7 @@ public class SfxManager : MonoBehaviour
     [SerializeField] private AudioClip iceCubeSfx;
     [SerializeField] private AudioClip pouringWaterSfx;
     [SerializeField] private AudioClip machineSfx;
+    [SerializeField] private AudioClip[] cookingComboSfx;
 
     [Header("Receipt SFX")]
     [SerializeField] private AudioClip moneySfx;
@@ -35,10 +36,7 @@ public class SfxManager : MonoBehaviour
 
     public void PlayBell()
     {
-        if (bellDingSfx != null)
-        {
-            sfxSource.PlayOneShot(bellDingSfx);
-        }
+        PlaySfx(bellDingSfx);
     }
 
     public void PlayClick()
@@ -61,6 +59,17 @@ public class SfxManager : MonoBehaviour
         PlaySfx(machineSfx);
     }
 
+    public void PlayCookingCombo(int comboNumber)
+    {
+        if (cookingComboSfx == null || cookingComboSfx.Length == 0)
+        {
+            return;
+        }
+
+        int clipIndex = Mathf.Clamp(comboNumber - 1, 0, cookingComboSfx.Length - 1);
+        PlaySfx(cookingComboSfx[clipIndex]);
+    }
+
     public void PlayMoney()
     {
         PlaySfx(moneySfx);
@@ -77,7 +86,7 @@ public class SfxManager : MonoBehaviour
 
         if (clipToPlay != null && volume > 0.01f)
         {
-            sfxSource.PlayOneShot(clipToPlay, volume);
+            PlaySfx(clipToPlay, volume);
         }
     }
 
