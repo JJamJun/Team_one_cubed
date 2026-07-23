@@ -4,6 +4,7 @@ using UnityEngine.UI;
 public class NormalCustomerVisuals : MonoBehaviour, ICustomerVisuals
 {
     [Header("Image Layers")]
+    [SerializeField] private Image bodyImage;
     [SerializeField] private Image clothesImage;
     [SerializeField] private Image hairImage;
     [SerializeField] private Image eyesImage;
@@ -101,8 +102,10 @@ public class NormalCustomerVisuals : MonoBehaviour, ICustomerVisuals
             mouthImage.sprite = defaultMouth;
         }
     }
+
     public void SetVisible(bool isVisible)
     {
+        if (bodyImage != null) bodyImage.gameObject.SetActive(isVisible);
         if (clothesImage != null) clothesImage.gameObject.SetActive(isVisible);
         if (hairImage != null) hairImage.gameObject.SetActive(isVisible);
         if (eyesImage != null) eyesImage.gameObject.SetActive(isVisible);
