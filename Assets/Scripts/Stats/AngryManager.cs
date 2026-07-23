@@ -15,6 +15,7 @@ public class AngryManager : MonoBehaviour
     [SerializeField, InspectorName("3점대"), Range(0f, 1f)] private float monsterChanceRating3 = 0.3f;
     [SerializeField, InspectorName("4점대"), Range(0f, 1f)] private float monsterChanceRating4 = 0.2f;
     [SerializeField, InspectorName("5점대"), Range(0f, 1f)] private float monsterChanceRating5 = 0f;
+    [SerializeField, Range(0f, 1f)] private float angryChanceBeforeRatingUnlock = 0f;
 
     [Header("New Angry Effect References")]
     [Tooltip("A full-screen black image with a CanvasGroup to handle the lights-out effect.")]
@@ -118,7 +119,7 @@ public class AngryManager : MonoBehaviour
         float roll = UnityEngine.Random.value;
         Debug.Log($"[AngryManager] RNG Roll: {roll:F2}, Required Chance: <= {chance:F2}");
 
-        if (roll < chance)
+        if (roll > chance)
         {
             Debug.Log("[AngryManager] ABORTED: RNG failed. Jumpscare skipped.");
             return false;
@@ -133,8 +134,8 @@ public class AngryManager : MonoBehaviour
 
     private float GetMonsterChanceForCurrentRating()
     {
-        if (ReputationRatingManager.Instance != null && !ReputationRatingManager.Instance.IsRatingUnlocked)
-            return 0f;
+        if (ReputationRatingManager.Instance == null || !ReputationRatingManager.Instance.IsRatingUnlocked)
+            return angryChanceBeforeRatingUnlock;
 
         int ratingBand = ReputationRatingManager.Instance != null
             ? ReputationRatingManager.Instance.CurrentAngryEventBand : 0;

@@ -698,7 +698,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
   m_AnchorMax: {x: 1, y: 1}
-  m_AnchoredPosition: {x: 320.9, y: -73.26}
+  m_AnchoredPosition: {x: 320.89996, y: -73.26001}
   m_SizeDelta: {x: -1232.9, y: -711.82}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &97008512
@@ -1430,7 +1430,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
   m_AnchorMax: {x: 1, y: 1}
-  m_AnchoredPosition: {x: -0, y: 24.27}
+  m_AnchoredPosition: {x: 0, y: 24.270004}
   m_SizeDelta: {x: -48.02, y: -84.56}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &300100005
@@ -3628,7 +3628,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: 6.7249975, y: -25.399996}
+  m_AnchoredPosition: {x: 21.819998, y: -25.399996}
   m_SizeDelta: {x: 200, y: 50}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &413107839
@@ -3651,7 +3651,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: 0
+  m_text: 0.0
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: def0130b067c643468c7bb1e5aa180ba, type: 2}
   m_sharedMaterial: {fileID: -4430556824082795752, guid: def0130b067c643468c7bb1e5aa180ba, type: 2}
@@ -4391,7 +4391,7 @@ MonoBehaviour:
   exitPoint: {fileID: 1192930157}
   minSpawnTime: 5
   maxSpawnTime: 12
-  ghostChance: 0.2
+  ghostChance: 0
   customersBeforeGhostVisit: 5
   maxItemsInOrder: 3
   menuInfoCsv: {fileID: 4900000, guid: 46e3ca984147f8c46a9cf6d445df973c, type: 3}
@@ -6194,7 +6194,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
   m_AnchorMax: {x: 1, y: 1}
-  m_AnchoredPosition: {x: -0, y: -21}
+  m_AnchoredPosition: {x: 0, y: -21}
   m_SizeDelta: {x: -48.02, y: -104.57}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &886345447
@@ -7033,6 +7033,7 @@ MonoBehaviour:
   monsterChanceRating3: 0.3
   monsterChanceRating4: 0.2
   monsterChanceRating5: 0.05
+  angryChanceBeforeRatingUnlock: 0
   blackoutGroup: {fileID: 1387897352}
   jumpscareImage: {fileID: 1319042612}
   blinkPhaseDuration: 0.3
@@ -7563,7 +7564,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: -56, y: -162}
+  m_AnchoredPosition: {x: -56, y: -161.99998}
   m_SizeDelta: {x: 100, y: 100}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &1033191771
@@ -12198,7 +12199,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 1, y: 1}
   m_AnchorMax: {x: 1, y: 1}
-  m_AnchoredPosition: {x: -4, y: 461}
+  m_AnchoredPosition: {x: -4, y: 460.99997}
   m_SizeDelta: {x: 319.07, y: 408.72}
   m_Pivot: {x: 1, y: 1}
 --- !u!114 &2078493585

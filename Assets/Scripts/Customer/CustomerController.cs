@@ -370,9 +370,6 @@ public class CustomerController : MonoBehaviour
                 break;
 
             case CustomerState.Angry:
-                
-
-                visuals?.SetAngry();
                 bool triggerAngryEvent = shouldTriggerAngryEvent;
                 shouldTriggerAngryEvent = true;
                 CustomerAngryReason angryReason = currentAngryReason;
@@ -382,6 +379,15 @@ public class CustomerController : MonoBehaviour
                 bool waitsForAngryEvent = triggerAngryEvent
                     && AngryManager.Instance != null
                     && AngryManager.Instance.TryTriggerAngryEvent(ghostType, LeaveScreen);
+
+                if (waitsForAngryEvent)
+                {
+                    visuals?.SetScary();
+                }
+                else
+                {
+                    visuals?.SetAngry();
+                }
 
                 ApplyAngryReputationChange(angryReason, waitsForAngryEvent);
 

@@ -25,6 +25,12 @@ public class GhostCustomerVisuals : MonoBehaviour, ICustomerVisuals
     {
         if (angrySprite != null && ghostImage != null) ghostImage.sprite = angrySprite;
     }
+
+    public void SetScary()
+    {
+        SetAngry();
+    }
+
     public void SetVisible(bool isVisible)
     {
         if (ghostImage != null) ghostImage.gameObject.SetActive(isVisible);
