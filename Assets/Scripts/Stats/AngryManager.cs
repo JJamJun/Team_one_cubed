@@ -24,7 +24,7 @@ public class AngryManager : MonoBehaviour
 
     [Header("Effect Settings")]
     [SerializeField, Tooltip("How long the screen blinks before going completely black.")]
-    private float blinkPhaseDuration = 0.5f;
+    private float blinkPhaseDuration = 1.5f;
     [SerializeField, Tooltip("How many times the lights flicker during the blink phase.")]
     private int blinkCount = 3;
     [SerializeField, Tooltip("How long the image vibrates on screen.")]
@@ -41,7 +41,10 @@ public class AngryManager : MonoBehaviour
 
     private bool pendingAngryEvent;
     private bool isAngryEventPlaying;
-    private bool shouldResumeBgmAfterAngryEvent;
+
+    // BGM Volume Tracking
+    private AudioSource grabbedBgmSource;
+    private float originalBgmVolume = 1f;
 
     private Action pendingAngryEventCompleted;
     private Action activeAngryEventCompleted;
@@ -65,6 +68,9 @@ public class AngryManager : MonoBehaviour
 
         Instance = this;
 
+        // Force this to 1.5s in case the Unity Inspector tries to load an old value
+        blinkPhaseDuration = 1.5f;
+
         if (jumpscareImage != null)
         {
             originalJumpscarePos = jumpscareImage.anchoredPosition;
@@ -83,7 +89,6 @@ public class AngryManager : MonoBehaviour
     {
         GameInputBlocker.SetBlocked(false);
         RestoreEventSystem();
-        // Assuming this external UI script still exists to tell us when UI is ready
         UIStationScoller.CounterStationSettled += TryPlayPendingAngryEvent;
     }
 
@@ -99,14 +104,27 @@ public class AngryManager : MonoBehaviour
         if (Instance == this) Instance = null;
     }
 
-    // REQUIREMENT: Only trigger if the customer is a normal customer (GhostType.None)
     public bool TryTriggerAngryEvent(GhostType ghostType, Action onComplete = null)
     {
-        if (ghostType != GhostType.None || UnityEngine.Random.value > GetMonsterChanceForCurrentRating())
+        Debug.Log($"[AngryManager] TryTriggerAngryEvent called. Customer Type: {ghostType}");
+
+        if (ghostType != GhostType.None)
         {
-            return false; // Skip the event entirely
+            Debug.Log("[AngryManager] ABORTED: Customer is a ghost. Jumpscare skipped.");
+            return false;
         }
 
+        float chance = GetMonsterChanceForCurrentRating();
+        float roll = UnityEngine.Random.value;
+        Debug.Log($"[AngryManager] RNG Roll: {roll:F2}, Required Chance: <= {chance:F2}");
+
+        if (roll < chance)
+        {
+            Debug.Log("[AngryManager] ABORTED: RNG failed. Jumpscare skipped.");
+            return false;
+        }
+
+        Debug.Log("[AngryManager] SUCCESS: Jumpscare event queued.");
         pendingAngryEventCompleted += onComplete;
         pendingAngryEvent = true;
         TryPlayPendingAngryEvent();
@@ -137,11 +155,22 @@ public class AngryManager : MonoBehaviour
 
     private void TryPlayPendingAngryEvent()
     {
-        if (!pendingAngryEvent || isAngryEventPlaying) return;
+        if (!pendingAngryEvent) return;
+
+        if (isAngryEventPlaying)
+        {
+            Debug.LogWarning("[AngryManager] Blocked: An angry event is already playing.");
+            return;
+        }
 
         UIStationScoller stationScroller = UIStationScoller.Instance;
-        if (stationScroller != null && !stationScroller.IsCounterSettled) return;
+        if (stationScroller != null && !stationScroller.IsCounterSettled)
+        {
+            Debug.LogWarning("[AngryManager] Waiting: UI counter station is not settled yet. Will trigger when ready.");
+            return;
+        }
 
+        Debug.Log("[AngryManager] Playing the Jumpscare Event now!");
         activeAngryEventCompleted = pendingAngryEventCompleted;
         pendingAngryEventCompleted = null;
         pendingAngryEvent = false;
@@ -153,17 +182,14 @@ public class AngryManager : MonoBehaviour
     {
         BeginAngryEventLock();
 
-        // Failsafe in case DOTween bugs out
         float totalDuration = blinkPhaseDuration + vibrateDuration + 1f;
         ScheduleUnlockFailsafe(totalDuration);
 
-        // Reset states
         blackoutGroup.gameObject.SetActive(true);
         blackoutGroup.alpha = 0f;
         jumpscareImage.gameObject.SetActive(false);
         jumpscareImage.anchoredPosition = originalJumpscarePos;
 
-        // Play SFX using existing SoundManager
         if (riserSfx != null && SoundManager.Instance != null && SoundManager.Instance.SFX != null)
         {
             SoundManager.Instance.SFX.PlaySfx(riserSfx);
@@ -172,7 +198,6 @@ public class AngryManager : MonoBehaviour
         angrySequence?.Kill();
         angrySequence = DOTween.Sequence();
 
-        // a. Blink a few times (alpha bouncing 0 to 1)
         float singleFlickerTime = blinkPhaseDuration / (blinkCount * 2);
         for (int i = 0; i < blinkCount; i++)
         {
@@ -180,21 +205,21 @@ public class AngryManager : MonoBehaviour
             angrySequence.Append(blackoutGroup.DOFade(0f, singleFlickerTime).SetEase(Ease.Flash));
         }
 
-        // Final cut to black
+        // 1. Final cut to black
         angrySequence.Append(blackoutGroup.DOFade(1f, 0.05f));
 
-        // b. Show the overlay image while the screen is black
+        // 2. Turn on the jumpscare image
         angrySequence.AppendCallback(() => jumpscareImage.gameObject.SetActive(true));
 
-        // c. Turn screen back on (remove blackout instantly or quick fade)
-        angrySequence.Append(blackoutGroup.DOFade(0f, 0.1f));
-
-        // d. Vibrate image for a couple of seconds
+        // 3. Shake it for the full duration WHILE the background remains pitch black
         angrySequence.Append(jumpscareImage.DOShakeAnchorPos(vibrateDuration, vibrateStrength, vibrateVibrato));
 
-        // e. Remove all effects and unlock
+        // 4. Fade the darkness away ONLY after the shaking is done
+        angrySequence.Append(blackoutGroup.DOFade(0f, 0.1f));
+
         angrySequence.OnComplete(() =>
         {
+            Debug.Log("[AngryManager] Jumpscare sequence finished.");
             jumpscareImage.gameObject.SetActive(false);
             blackoutGroup.gameObject.SetActive(false);
             EndAngryEventLock();
@@ -207,8 +232,21 @@ public class AngryManager : MonoBehaviour
         GameInputBlocker.SetBlocked(true);
 
         BgmManager bgmManager = BgmManager.Instance;
-        shouldResumeBgmAfterAngryEvent = bgmManager != null && bgmManager.IsAnyTrackPlaying;
-        bgmManager?.StopAllTracks();
+        if (bgmManager != null)
+        {
+            grabbedBgmSource = bgmManager.GetComponent<AudioSource>();
+
+            if (grabbedBgmSource != null)
+            {
+                originalBgmVolume = grabbedBgmSource.volume;
+                grabbedBgmSource.volume = 0f;
+            }
+            else
+            {
+                Debug.LogWarning("[AngryManager] Could not find an AudioSource on BgmManager to mute! If you use a custom volume method, add it here.");
+                // e.g., bgmManager.SetVolume(0f);
+            }
+        }
     }
 
     private void EndAngryEventLock()
@@ -221,13 +259,13 @@ public class AngryManager : MonoBehaviour
         GameInputBlocker.SetBlocked(false);
         RestoreEventSystem();
 
-        if (shouldResumeBgmAfterAngryEvent)
+        // Restore BGM Volume
+        if (grabbedBgmSource != null)
         {
-            shouldResumeBgmAfterAngryEvent = false;
-            BgmManager.Instance?.ResumePlaylist();
+            grabbedBgmSource.volume = originalBgmVolume;
+            grabbedBgmSource = null;
         }
 
-        // Clean up visual state in case of early interrupt
         if (blackoutGroup != null) blackoutGroup.gameObject.SetActive(false);
         if (jumpscareImage != null) jumpscareImage.gameObject.SetActive(false);
 
@@ -253,5 +291,30 @@ public class AngryManager : MonoBehaviour
             : FindFirstObjectByType<EventSystem>(FindObjectsInactive.Include);
 
         if (eventSystem != null) eventSystem.enabled = true;
+    }
+
+    // ==========================================
+    // DEBUG TOOLS
+    // ==========================================
+
+    [ContextMenu("DEBUG: Force Play Jumpscare")]
+    public void DebugForcePlayJumpscare()
+    {
+        Debug.Log("[AngryManager] Force triggering jumpscare from Inspector!");
+
+        if (isAngryEventPlaying)
+        {
+            Debug.LogWarning("[AngryManager] Cannot force play: Event is already running!");
+            return;
+        }
+
+        if (blackoutGroup == null || jumpscareImage == null)
+        {
+            Debug.LogError("[AngryManager] Missing UI references! Assign Blackout Group and Jumpscare Image.");
+            return;
+        }
+
+        pendingAngryEventCompleted = null;
+        PlayAngryEvent();
     }
 }

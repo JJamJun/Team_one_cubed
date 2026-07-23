@@ -833,8 +833,8 @@ MonoBehaviour:
   scaryEyes: {fileID: 21300000, guid: c3e1d4146769b1d4087ce2b61ec362e6, type: 3}
   scaryMouth: {fileID: 21300000, guid: 841ba68a136aa4b418d1b9c6f2ef4501, type: 3}
   scaryBodySprites:
-  - {fileID: -2075137023412651164, guid: 777291f0809eead40acd0b361d92e1eb, type: 3}
-  - {fileID: -5896769360119570838, guid: 5b7ff177b6aa7ec47b58c5d6fa6510ce, type: 3}
+  - {fileID: 21300000, guid: 5b7ff177b6aa7ec47b58c5d6fa6510ce, type: 3}
+  - {fileID: 21300000, guid: 777291f0809eead40acd0b361d92e1eb, type: 3}
 --- !u!1 &9108643113957960241
 GameObject:
   m_ObjectHideFlags: 0

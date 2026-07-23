@@ -370,7 +370,7 @@ public class CustomerController : MonoBehaviour
                 break;
 
             case CustomerState.Angry:
-                // Inside CustomerController.cs -> ChangeState() -> case CustomerState.Angry:
+                
 
                 visuals?.SetAngry();
                 bool triggerAngryEvent = shouldTriggerAngryEvent;

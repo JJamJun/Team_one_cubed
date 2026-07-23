@@ -538,6 +538,7 @@ Transform:
   - {fileID: 2022072239}
   - {fileID: 946550746}
   - {fileID: 352377983}
+  - {fileID: 925094473}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &89782087
@@ -6820,7 +6821,7 @@ RectTransform:
   - {fileID: 1438022473}
   - {fileID: 1387897351}
   - {fileID: 317211197}
-  m_Father: {fileID: 0}
+  m_Father: {fileID: 76908856}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
   m_AnchorMax: {x: 0, y: 0}
@@ -7034,12 +7035,12 @@ MonoBehaviour:
   monsterChanceRating5: 0.05
   blackoutGroup: {fileID: 1387897352}
   jumpscareImage: {fileID: 1319042612}
-  blinkPhaseDuration: 0.5
-  blinkCount: 3
+  blinkPhaseDuration: 0.3
+  blinkCount: 5
   vibrateDuration: 2
   vibrateStrength: 50
   vibrateVibrato: 20
-  riserSfx: {fileID: 0}
+  riserSfx: {fileID: 8300000, guid: b67419e469980be45b75a9d737c2d2c3, type: 3}
 --- !u!1 &948207812
 GameObject:
   m_ObjectHideFlags: 0
@@ -8607,14 +8608,14 @@ RectTransform:
   m_GameObject: {fileID: 1319042611}
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 0.5, y: 0.5, z: 0.5}
+  m_LocalScale: {x: 0.3333333, y: 0.3333333, z: 0.3333333}
   m_ConstrainProportionsScale: 1
   m_Children: []
   m_Father: {fileID: 1387897351}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: 0, y: -34}
+  m_AnchoredPosition: {x: 0, y: -22.666504}
   m_SizeDelta: {x: 2048, y: 2001}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &1319042613
@@ -8906,15 +8907,15 @@ RectTransform:
   m_GameObject: {fileID: 1387897350}
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
+  m_LocalScale: {x: 1.5, y: 1.5, z: 1.5}
+  m_ConstrainProportionsScale: 1
   m_Children:
   - {fileID: 1319042612}
   m_Father: {fileID: 925094473}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: -1920, y: 0}
+  m_AnchoredPosition: {x: 0, y: 0}
   m_SizeDelta: {x: 1920, y: 1080}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!225 &1387897352
@@ -12570,7 +12571,6 @@ SceneRoots:
   m_Roots:
   - {fileID: 718910367}
   - {fileID: 76908856}
-  - {fileID: 925094473}
   - {fileID: 1860607916}
   - {fileID: 216000002}
   - {fileID: 968220004}

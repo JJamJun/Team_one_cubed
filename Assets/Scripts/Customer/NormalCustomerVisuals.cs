@@ -134,7 +134,6 @@ public class NormalCustomerVisuals : MonoBehaviour, ICustomerVisuals
         if (bodyImage != null && defaultBody != null)
         {
             bodyImage.sprite = defaultBody;
-            bodyImage.SetNativeSize();
         }
     }
 
