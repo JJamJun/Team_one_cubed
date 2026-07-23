@@ -1808,6 +1808,7 @@ GameObject:
   - component: {fileID: 317211197}
   - component: {fileID: 317211199}
   - component: {fileID: 317211198}
+  - component: {fileID: 317211200}
   m_Layer: 5
   m_Name: PausePanel
   m_TagString: Untagged
@@ -1873,6 +1874,20 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 317211196}
   m_CullTransparentMesh: 1
+--- !u!114 &317211200
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 317211196}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f3e6f57395bd43278fe12983977d0e23, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::PausePanelController
+  pausePanel: {fileID: 317211196}
+  fadeDuration: 0.35
 --- !u!1 &323351796
 GameObject:
   m_ObjectHideFlags: 0
