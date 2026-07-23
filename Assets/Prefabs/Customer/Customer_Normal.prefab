@@ -798,6 +798,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e4492d4b76e19f840aba35e53b183067, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::NormalCustomerVisuals
+  bodyImage: {fileID: 273998917611496575}
   clothesImage: {fileID: 9047576420527798832}
   hairImage: {fileID: 6905520911525018691}
   eyesImage: {fileID: 8276789863475892195}
