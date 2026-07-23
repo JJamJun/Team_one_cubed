@@ -138,7 +138,20 @@ MonoBehaviour:
   arrivalDuration: 1.5
   moveDuration: 1
   bobbingAmplitude: 20
+  bobbingSpeed: 0.2
   maxPatience: 15
+  successDialogues:
+  - "\uB9DB\uC788\uB2E4..."
+  typeSpeed: 0.05
+  readDelayAfterTyping: 1
+  sentenceStarters:
+  - "\uC800... "
+  separators:
+  - ', '
+  lastSeparators:
+  - "\uD558\uACE0... "
+  sentenceClosers:
+  - ...
 --- !u!114 &2026711641629878955
 MonoBehaviour:
   m_ObjectHideFlags: 0

@@ -63,7 +63,21 @@ MonoBehaviour:
   arrivalDuration: 1.5
   moveDuration: 1
   bobbingAmplitude: 20
+  bobbingSpeed: 0.2
   maxPatience: 15
+  successDialogues:
+  - "\uD6C4\uC544... \uD65C\uAE30\uAC00 \uB3C8\uB2E4..!"
+  typeSpeed: 0.05
+  readDelayAfterTyping: 1
+  sentenceStarters:
+  - "\uBAB8\uC774 \uAC00\uBCBC\uC6CC... \uC74C\uB8CC\uC218\uAC00 \uD544\uC694\uD55C\uAC8C
+    \uBD84\uBA85\uD574! "
+  separators:
+  - ', '
+  lastSeparators:
+  - "\uC774\uB791 "
+  sentenceClosers:
+  - " \uC8FC\uC138\uC694!"
 --- !u!114 &6440574990424238344
 MonoBehaviour:
   m_ObjectHideFlags: 0

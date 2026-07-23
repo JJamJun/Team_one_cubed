@@ -754,10 +754,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: a6789e954cb98e546a0094db684ff815, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::CustomerController
+  ghostType: 0
   rectTransform: {fileID: 3638035486425996366}
   speechBubble: {fileID: 9108643113957960241}
-  patienceMeterFill: {fileID: 3161123621715409920}
   orderTextLabel: {fileID: 5316475732115087888}
+  patienceMeterFill: {fileID: 3161123621715409920}
   spawnLocation: {fileID: 0}
   counterLocation: {fileID: 0}
   pickupLocation: {fileID: 0}
@@ -765,7 +766,26 @@ MonoBehaviour:
   arrivalDuration: 1.5
   moveDuration: 1
   bobbingAmplitude: 20
+  bobbingSpeed: 0.2
   maxPatience: 15
+  successDialogues:
+  - "\uAC10\uC0AC\uD569\uB2C8\uB2E4!"
+  - "\uAC10\uC0AC\uD569\uB2C8\uB2E4~"
+  - "\uC88B\uC740 \uD558\uB8E8 \uB418\uC138\uC694~!"
+  typeSpeed: 0.05
+  readDelayAfterTyping: 1
+  sentenceStarters:
+  - 
+  - "\uC800\uAE30, "
+  separators:
+  - ', '
+  - ', '
+  lastSeparators:
+  - "\uC774\uB791 "
+  - "\uD558\uACE0... "
+  sentenceClosers:
+  - " \uC8FC\uC138\uC694."
+  - " \uAC00\uB2A5\uD560\uAE4C\uC694?"
 --- !u!114 &6174540304473105637
 MonoBehaviour:
   m_ObjectHideFlags: 0
