@@ -15,6 +15,9 @@ public class SfxManager : MonoBehaviour
     [SerializeField] private AudioClip pouringWaterSfx;
     [SerializeField] private AudioClip machineSfx;
     [SerializeField] private AudioClip[] cookingComboSfx;
+    [SerializeField] private AudioClip cupDragSfx;
+    [SerializeField] private AudioClip cookingClockingSfx;
+    [SerializeField] private AudioSource cookingClockingSource;
 
     [Header("Receipt SFX")]
     [SerializeField] private AudioClip moneySfx;
@@ -32,6 +35,7 @@ public class SfxManager : MonoBehaviour
     private void Awake()
     {
         sfxSource = GetComponent<AudioSource>();
+        EnsureCookingClockingSource();
     }
 
     public void PlayBell()
@@ -68,6 +72,37 @@ public class SfxManager : MonoBehaviour
 
         int clipIndex = Mathf.Clamp(comboNumber - 1, 0, cookingComboSfx.Length - 1);
         PlaySfx(cookingComboSfx[clipIndex]);
+    }
+
+    public void PlayCupDrag()
+    {
+        PlaySfx(cupDragSfx);
+    }
+
+    public void StartCookingClocking()
+    {
+        EnsureCookingClockingSource();
+        if (cookingClockingSource == null || cookingClockingSfx == null)
+        {
+            return;
+        }
+
+        if (cookingClockingSource.isPlaying && cookingClockingSource.clip == cookingClockingSfx)
+        {
+            return;
+        }
+
+        cookingClockingSource.clip = cookingClockingSfx;
+        cookingClockingSource.loop = true;
+        cookingClockingSource.Play();
+    }
+
+    public void StopCookingClocking()
+    {
+        if (cookingClockingSource != null)
+        {
+            cookingClockingSource.Stop();
+        }
     }
 
     public void PlayMoney()
@@ -123,5 +158,17 @@ public class SfxManager : MonoBehaviour
     public void PlaySfx(AudioClip clip, float volume = 1f)
     {
         if (clip != null) sfxSource.PlayOneShot(clip, volume);
+    }
+
+    private void EnsureCookingClockingSource()
+    {
+        if (cookingClockingSource != null)
+        {
+            return;
+        }
+
+        cookingClockingSource = gameObject.AddComponent<AudioSource>();
+        cookingClockingSource.playOnAwake = false;
+        cookingClockingSource.loop = true;
     }
 }

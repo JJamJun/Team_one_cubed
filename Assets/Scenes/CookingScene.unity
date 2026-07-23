@@ -1856,6 +1856,9 @@ MonoBehaviour:
   - {fileID: 8300000, guid: 69c0cfc89dd50fd4b931df50231f2558, type: 3}
   - {fileID: 8300000, guid: 457fe63cdcc92ce49a2f5d01aab4d745, type: 3}
   - {fileID: 8300000, guid: bdb0bcdbe519aff428250ac40021651a, type: 3}
+  cupDragSfx: {fileID: 8300000, guid: c194df0d44a4e324998be30c79cec292, type: 3}
+  cookingClockingSfx: {fileID: 8300000, guid: 1a3f1a2e00d7e794cb8013b6eba1146d, type: 3}
+  cookingClockingSource: {fileID: 0}
   moneySfx: {fileID: 8300000, guid: 8f86236c61719d3469ad438db30ed9ac, type: 3}
   failSfx: {fileID: 8300000, guid: f065ab6ab95d2904583a9a44c15881b5, type: 3}
   normalFootstep: {fileID: 8300000, guid: 5af2dde13958fcd4e8eeb637a0d45872, type: 3}
@@ -2018,6 +2021,11 @@ MonoBehaviour:
   normalCutoff: 22000
   muffledCutoff: 800
   muffleTransitionDuration: 1.5
+  littleGhostBgm: {fileID: 0}
+  grimReaperBgm: {fileID: 8300000, guid: ad149ca3105615945bdceefc44e6f551, type: 3}
+  womanGhostBgm: {fileID: 8300000, guid: 98076e2761d1b9f4badfb3e8f33d75e4, type: 3}
+  dokaebiBgm: {fileID: 8300000, guid: a85183a4734f86044ba6c99ebb95b0aa, type: 3}
+  ghostBgmSource: {fileID: 0}
 --- !u!169 &324356239
 AudioLowPassFilter:
   m_ObjectHideFlags: 0

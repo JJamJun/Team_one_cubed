@@ -43,6 +43,7 @@ public class CupDragSource : MonoBehaviour, IPointerDownHandler, IDragHandler, I
         activeSpawnedCup = Instantiate(cupTemplate, spawnParent);
         activeSpawnedCup.gameObject.SetActive(true);
         activeSpawnedCup.name = "CupSprite";
+        SoundManager.Instance?.SFX?.PlayCupDrag();
         activeSpawnedCup.InitializeSpawnedCup(
             trashCanArea,
             iceMachineArea,

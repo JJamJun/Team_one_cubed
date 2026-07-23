@@ -234,12 +234,14 @@ public class CustomerManager : MonoBehaviour
 
         if (customer == activeGhost)
         {
-            if (ghostEffectDirector != null)
-            {
-                ghostEffectDirector.TriggerGhostDeparture(activeGhost.CustomerGhostType, activeGhost.IsHappy);
-            }
+        if (ghostEffectDirector != null)
+        {
+            ghostEffectDirector.TriggerGhostDeparture(activeGhost.CustomerGhostType, activeGhost.IsHappy);
+        }
 
-            activeGhost = null;
+        BgmManager.Instance?.StopGhostBgmAndResumePlaylist();
+
+        activeGhost = null;
             pendingGhostPrefab = null;
             pendingGhostType = GhostType.None;
             ghostTrialActive = false;
@@ -361,6 +363,8 @@ public class CustomerManager : MonoBehaviour
         {
             ghostEffectDirector.TriggerGhostArrival(pendingGhostType);
         }
+
+        BgmManager.Instance?.PlayGhostBgm(pendingGhostType);
 
         Debug.Log($"{pendingGhostType} trial started. The ghost will visit after {customersBeforeGhostVisit} customers.");
     }

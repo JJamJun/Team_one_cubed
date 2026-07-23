@@ -305,6 +305,7 @@ public class CookingMiniGameController : MonoBehaviour
         arrowInputEnabled = false;
         escapeExitEnabled = false;
         timerRunning = false;
+        SoundManager.Instance?.SFX?.StopCookingClocking();
         activeCookingCup = null;
         cookingResultApplied = false;
         dokkaebiShieldAvailable = false;
@@ -908,6 +909,11 @@ public class CookingMiniGameController : MonoBehaviour
         remainingCookingTime = Mathf.Max(0.01f, cookingTimeLimit);
         timerRunning = arrowInputEnabled;
         ResetTimerVisual();
+
+        if (timerRunning)
+        {
+            SoundManager.Instance?.SFX?.StartCookingClocking();
+        }
     }
 
     private void UpdateCookingTimer()

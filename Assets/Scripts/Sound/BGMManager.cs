@@ -15,10 +15,22 @@ public class BgmManager : MonoBehaviour
     [SerializeField] private float muffledCutoff = 800f;   // muffled EQ for ghost effect
     [SerializeField] private float muffleTransitionDuration = 1.5f;
 
+    [Header("Ghost BGM")]
+    [SerializeField] private AudioClip littleGhostBgm;
+    [SerializeField] private AudioClip grimReaperBgm;
+    [SerializeField] private AudioClip womanGhostBgm;
+    [SerializeField] private AudioClip dokaebiBgm;
+    [SerializeField] private AudioSource ghostBgmSource;
+
     private AudioSource[] bgmSources;
+    private bool[] pausedPlaylistSources;
     private int currentSourceIndex = 0;
     private AudioLowPassFilter lowPassFilter;
     private bool isCrossfading = false;
+    private bool isGhostBgmPlaying;
+    private bool shouldRestoreGhostBgmAfterStopAll;
+    private AudioClip stoppedGhostBgmClip;
+    private float stoppedGhostBgmTime;
 
     public bool IsAnyTrackPlaying
     {
@@ -37,6 +49,11 @@ public class BgmManager : MonoBehaviour
                 }
             }
 
+            if (ghostBgmSource != null && ghostBgmSource.isPlaying)
+            {
+                return true;
+            }
+
             return false;
         }
     }
@@ -47,6 +64,7 @@ public class BgmManager : MonoBehaviour
 
         //two audio sources for crossfading
         bgmSources = new AudioSource[2];
+        pausedPlaylistSources = new bool[2];
         for (int i = 0; i < 2; i++)
         {
             bgmSources[i] = gameObject.AddComponent<AudioSource>();
@@ -57,6 +75,7 @@ public class BgmManager : MonoBehaviour
 
         lowPassFilter = GetComponent<AudioLowPassFilter>();
         lowPassFilter.cutoffFrequency = normalCutoff;
+        EnsureGhostBgmSource();
     }
 
     public void StopAllTracks()
@@ -81,6 +100,11 @@ public class BgmManager : MonoBehaviour
         }
 
         isCrossfading = false;
+
+        shouldRestoreGhostBgmAfterStopAll = ghostBgmSource != null && ghostBgmSource.isPlaying;
+        stoppedGhostBgmClip = shouldRestoreGhostBgmAfterStopAll ? ghostBgmSource.clip : null;
+        stoppedGhostBgmTime = shouldRestoreGhostBgmAfterStopAll ? ghostBgmSource.time : 0f;
+        StopGhostBgm(false);
     }
 
     private void Start()
@@ -90,6 +114,11 @@ public class BgmManager : MonoBehaviour
 
     private void Update()
     {
+        if (isGhostBgmPlaying)
+        {
+            return;
+        }
+
         AudioSource currentSource = bgmSources[currentSourceIndex];
 
         if (currentSource.isPlaying && currentSource.clip != null && !isCrossfading)
@@ -146,7 +175,13 @@ public class BgmManager : MonoBehaviour
 
     public void ResumePlaylist()
     {
-        if (bgmPlaylist == null || bgmPlaylist.Length == 0 || bgmSources == null || IsAnyTrackPlaying)
+        if (shouldRestoreGhostBgmAfterStopAll)
+        {
+            RestoreGhostBgmAfterStopAll();
+            return;
+        }
+
+        if (isGhostBgmPlaying || bgmPlaylist == null || bgmPlaylist.Length == 0 || bgmSources == null || IsAnyTrackPlaying)
         {
             return;
         }
@@ -179,6 +214,142 @@ public class BgmManager : MonoBehaviour
         }
 
         return nextClip;
+    }
+
+    public void PlayGhostBgm(GhostType ghostType)
+    {
+        AudioClip ghostClip = GetGhostBgmClip(ghostType);
+        if (ghostClip == null)
+        {
+            Debug.LogWarning($"{nameof(BgmManager)}: Ghost BGM for {ghostType} is not assigned.");
+            return;
+        }
+
+        EnsureGhostBgmSource();
+        if (ghostBgmSource == null)
+        {
+            return;
+        }
+
+        PausePlaylistForGhost();
+        ghostBgmSource.clip = ghostClip;
+        ghostBgmSource.loop = true;
+        ghostBgmSource.volume = 1f;
+        ghostBgmSource.Play();
+        isGhostBgmPlaying = true;
+    }
+
+    public void StopGhostBgmAndResumePlaylist()
+    {
+        StopGhostBgm(true);
+        ResumePausedPlaylistSources();
+
+        if (!IsAnyTrackPlaying)
+        {
+            ResumePlaylist();
+        }
+    }
+
+    private void PausePlaylistForGhost()
+    {
+        if (bgmSources == null)
+        {
+            return;
+        }
+
+        DOTween.Kill(this);
+        for (int i = 0; i < bgmSources.Length; i++)
+        {
+            AudioSource source = bgmSources[i];
+            pausedPlaylistSources[i] = source != null && source.isPlaying;
+            if (pausedPlaylistSources[i])
+            {
+                source.Pause();
+            }
+        }
+
+        isCrossfading = false;
+    }
+
+    private void ResumePausedPlaylistSources()
+    {
+        if (bgmSources == null || pausedPlaylistSources == null)
+        {
+            return;
+        }
+
+        for (int i = 0; i < bgmSources.Length; i++)
+        {
+            AudioSource source = bgmSources[i];
+            if (source != null && pausedPlaylistSources[i])
+            {
+                source.UnPause();
+            }
+
+            pausedPlaylistSources[i] = false;
+        }
+    }
+
+    private void StopGhostBgm(bool clearStoppedGhostRestore)
+    {
+        isGhostBgmPlaying = false;
+        if (clearStoppedGhostRestore)
+        {
+            shouldRestoreGhostBgmAfterStopAll = false;
+            stoppedGhostBgmClip = null;
+            stoppedGhostBgmTime = 0f;
+        }
+
+        if (ghostBgmSource != null)
+        {
+            ghostBgmSource.Stop();
+        }
+    }
+
+    private void RestoreGhostBgmAfterStopAll()
+    {
+        EnsureGhostBgmSource();
+        if (ghostBgmSource == null || stoppedGhostBgmClip == null)
+        {
+            shouldRestoreGhostBgmAfterStopAll = false;
+            ResumePlaylist();
+            return;
+        }
+
+        ghostBgmSource.clip = stoppedGhostBgmClip;
+        ghostBgmSource.loop = true;
+        ghostBgmSource.volume = 1f;
+        ghostBgmSource.Play();
+        ghostBgmSource.time = Mathf.Clamp(stoppedGhostBgmTime, 0f, Mathf.Max(0f, stoppedGhostBgmClip.length - 0.01f));
+
+        isGhostBgmPlaying = true;
+        shouldRestoreGhostBgmAfterStopAll = false;
+        stoppedGhostBgmClip = null;
+        stoppedGhostBgmTime = 0f;
+    }
+
+    private AudioClip GetGhostBgmClip(GhostType ghostType)
+    {
+        switch (ghostType)
+        {
+            case GhostType.Little: return littleGhostBgm;
+            case GhostType.DeadLion: return grimReaperBgm;
+            case GhostType.Woman: return womanGhostBgm;
+            case GhostType.Dokaebi: return dokaebiBgm;
+            default: return null;
+        }
+    }
+
+    private void EnsureGhostBgmSource()
+    {
+        if (ghostBgmSource != null)
+        {
+            return;
+        }
+
+        ghostBgmSource = gameObject.AddComponent<AudioSource>();
+        ghostBgmSource.playOnAwake = false;
+        ghostBgmSource.loop = true;
     }
 
 
