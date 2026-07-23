@@ -141,7 +141,7 @@ MonoBehaviour:
   bobbingSpeed: 0.2
   maxPatience: 15
   successDialogues:
-  - "\uB9DB\uC788\uB2E4..."
+  - "\uD6C4\uD6C4... \uB2EC\uB2E4... \uACE0\uB9C8\uC6CC. "
   typeSpeed: 0.05
   readDelayAfterTyping: 1
   sentenceStarters:
@@ -152,6 +152,9 @@ MonoBehaviour:
   - "\uD558\uACE0... "
   sentenceClosers:
   - ...
+  forceCustomOrder: 1
+  forcedOrderText: "\uC544\uC774\uC2A4\uD2F0 1\uC794"
+  forcedSpeechBubbleMessage: "\uC800... \uB2EC\uB2EC\uD55C \uAC70\u2026"
 --- !u!114 &2026711641629878955
 MonoBehaviour:
   m_ObjectHideFlags: 0

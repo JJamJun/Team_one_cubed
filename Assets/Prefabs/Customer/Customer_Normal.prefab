@@ -786,6 +786,9 @@ MonoBehaviour:
   sentenceClosers:
   - " \uC8FC\uC138\uC694."
   - " \uAC00\uB2A5\uD560\uAE4C\uC694?"
+  forceCustomOrder: 0
+  forcedOrderText: "\uC544\uBA54\uB9AC\uCE74\uB178 1\uC794"
+  forcedSpeechBubbleMessage: "\uC501\uC4F8\uD55C\uAC8C \uB561\uAE30\uB124\uC694"
 --- !u!114 &6174540304473105637
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -827,8 +830,11 @@ MonoBehaviour:
   - {fileID: 21300000, guid: 67f17f23566d07049b28b1286d27218a, type: 3}
   angryEyes: {fileID: 21300000, guid: 5b4ae620ce167a74a8fcfdeb703daace, type: 3}
   angryMouth: {fileID: 21300000, guid: 3d6495b4fb18b9b40a22b72e6e0068fd, type: 3}
-  scaryEyes: {fileID: 692013227144346193, guid: c3e1d4146769b1d4087ce2b61ec362e6, type: 3}
-  scaryMouth: {fileID: 3084107057218272383, guid: 841ba68a136aa4b418d1b9c6f2ef4501, type: 3}
+  scaryEyes: {fileID: 21300000, guid: c3e1d4146769b1d4087ce2b61ec362e6, type: 3}
+  scaryMouth: {fileID: 21300000, guid: 841ba68a136aa4b418d1b9c6f2ef4501, type: 3}
+  scaryBodySprites:
+  - {fileID: 8666235887829654162, guid: 2759df10f3a9a734aa91a23743b94d03, type: 3}
+  - {fileID: -7680914024049817883, guid: 4b2b9c96eaa9db54496cb2c009e000c0, type: 3}
 --- !u!1 &9108643113957960241
 GameObject:
   m_ObjectHideFlags: 0
