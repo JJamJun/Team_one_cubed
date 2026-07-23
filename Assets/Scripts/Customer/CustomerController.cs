@@ -47,15 +47,15 @@ public class CustomerController : MonoBehaviour
     [SerializeField] private float maxPatience = 15f;
 
     [Header("Dialogue Settings")]
-    [SerializeField] private string[] successDialogues = { "감사합니다!", "감사합니다~", "좋은 하루 되세요~!" };
+    [SerializeField] private string[] successDialogues = { "�����մϴ�!", "�����մϴ�~", "���� �Ϸ� �Ǽ���~!" };
     [SerializeField] private float typeSpeed = 0.05f;
     [SerializeField] private float readDelayAfterTyping = 1.0f;
 
     [Header("Order Dialogue Formats (Keep array lengths matched!)")]
     [SerializeField] private string[] sentenceStarters = { "" };
     [SerializeField] private string[] separators = { ", " };
-    [SerializeField] private string[] lastSeparators = { "이랑 " };
-    [SerializeField] private string[] sentenceClosers = { " 주세요." };
+    [SerializeField] private string[] lastSeparators = { "�̶� " };
+    [SerializeField] private string[] sentenceClosers = { " �ּ���." };
 
     private CustomerState currentState;
     private float currentPatience;
@@ -400,7 +400,7 @@ public class CustomerController : MonoBehaviour
     [ContextMenu("Test Order Formatting")]
     private void TestOrderFormatting()
     {
-        string dummyOrder = "<음료1> 1잔\n<음료2> 2잔\n<음료3> 3잔";
+        string dummyOrder = "<����1> 1��\n<����2> 2��\n<����3> 3��";
         string result = FormatOrderString(dummyOrder);
 
         Debug.Log($"<b>[{gameObject.name} - {ghostType}]</b> Test Result:\n<color=yellow>{result}</color>");

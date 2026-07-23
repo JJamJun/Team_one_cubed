@@ -66,11 +66,18 @@ MonoBehaviour:
   bobbingSpeed: 0.2
   maxPatience: 15
   successDialogues:
-  - "\uACE0\uB9C8\uC6CC! \uB108\uB124 \uAC00\uAC8C \uC798\uD55C\uB2F9!"
-  - "\uC608\uC804 \uB2E8\uACE8\uC9D1\uC774 \uC0AC\uB77C\uC838\uC11C \uC2AC\uD508\uB370"
-  - "\uC88B\uC740 \uD558\uB8E8 \uB418\uC138\uC694~!"
+  - "\uD6C4\uC544... \uD65C\uAE30\uAC00 \uB3C8\uB2E4..!"
   typeSpeed: 0.05
   readDelayAfterTyping: 1
+  sentenceStarters:
+  - "\uBAB8\uC774 \uAC00\uBCBC\uC6CC... \uC74C\uB8CC\uC218\uAC00 \uD544\uC694\uD55C\uAC8C
+    \uBD84\uBA85\uD574! "
+  separators:
+  - ', '
+  lastSeparators:
+  - "\uC774\uB791 "
+  sentenceClosers:
+  - " \uC8FC\uC138\uC694!"
 --- !u!114 &6440574990424238344
 MonoBehaviour:
   m_ObjectHideFlags: 0

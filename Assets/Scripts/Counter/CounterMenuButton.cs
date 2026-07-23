@@ -38,24 +38,17 @@ public class CounterMenuButton : MonoBehaviour
 
     private void SetLabel(string labelText)
     {
-        string displayText = FormatMenuNameForButton(labelText);
-
         TMP_Text tmpLabel = GetComponentInChildren<TMP_Text>(true);
         if (tmpLabel != null)
         {
-            tmpLabel.text = displayText;
+            tmpLabel.text = labelText;
             return;
         }
 
         Text legacyLabel = GetComponentInChildren<Text>(true);
         if (legacyLabel != null)
         {
-            legacyLabel.text = displayText;
+            legacyLabel.text = labelText;
         }
-    }
-
-    private static string FormatMenuNameForButton(string labelText)
-    {
-        return string.IsNullOrEmpty(labelText) ? string.Empty : labelText.Replace(" ", "\n");
     }
 }
