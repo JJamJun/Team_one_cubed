@@ -163,7 +163,7 @@ public class CookingMiniGameController : MonoBehaviour
         }
         else
         {
-            if (BuffDebuffManager.DokkaebiBuffActive && dokkaebiShieldAvailable)
+            if (BuffDebuffManager.CommandMistakeShieldBuffActive && dokkaebiShieldAvailable)
             {
                 dokkaebiShieldAvailable = false;
                 dokkaebiShieldedIndex = inputIndex;
@@ -177,11 +177,11 @@ public class CookingMiniGameController : MonoBehaviour
                     timerRunning = false;
                     escapeExitEnabled = true;
                     ApplyCookingResult(true);
-                    Debug.Log($"Cooking command complete with Dokkaebi shield: {currentMenuName}");
+                    Debug.Log($"Cooking command complete with command shield: {currentMenuName}");
                 }
 
                 RenderArrowCommand();
-                Debug.Log($"Dokkaebi shield blocked wrong input: {currentMenuName}");
+                Debug.Log($"Command shield blocked wrong input: {currentMenuName}");
                 return;
             }
 
@@ -230,7 +230,7 @@ public class CookingMiniGameController : MonoBehaviour
         currentCommand = BuffDebuffManager.ApplyVirginGhostCommandReduction(currentBaseCommand);
         inputIndex = 0;
         wrongIndex = -1;
-        dokkaebiShieldAvailable = BuffDebuffManager.DokkaebiBuffActive;
+        dokkaebiShieldAvailable = BuffDebuffManager.CommandMistakeShieldBuffActive;
         dokkaebiShieldedIndex = -1;
         commandComplete = string.IsNullOrEmpty(currentCommand);
         arrowInputEnabled = !commandComplete;
@@ -660,7 +660,7 @@ public class CookingMiniGameController : MonoBehaviour
             Color color = pendingColor;
             if (i == dokkaebiShieldedIndex)
             {
-                color = BuffDebuffManager.DokkaebiShieldTextColor;
+                color = BuffDebuffManager.CommandMistakeShieldTextColor;
             }
             else if (i < inputIndex)
             {
